@@ -140,6 +140,21 @@ This spike is successful if we achieve:
 - Debugging across Rust/JS boundary
 - Build optimization strategies
 
+## 🔍 Quick Performance Check (Optional)
+
+### Simple Tools
+
+- **Browser DevTools**: Performance tab for frame rate monitoring
+- **twiggy** (optional): `cargo install twiggy` for WASM bundle size
+
+### Quick Checks
+
+1. **Frame Rate**: Open DevTools Performance tab, check for smooth 60fps
+2. **Bundle Size**: Run `twiggy top particle_sim_bg.wasm` to see WASM size
+3. **Memory**: Watch Memory tab for any obvious leaks
+
+*Keep it simple - the goal is to see WASM working, not deep performance analysis*
+
 ## 📝 Lessons Learned
 
 > *This section will be updated as we progress through the spike*

@@ -61,6 +61,27 @@
 - **Float32Array**: Efficient way to transfer numeric data between WASM and JS
 - **Memory Management**: WASM has linear memory that JS can access directly
 
+## Basic Performance Analysis (Optional)
+
+### Quick Profiling Tools
+
+#### Essential Tools (Install if interested)
+
+- [ ] **twiggy**: WASM bundle size analysis: `cargo install twiggy`
+- [ ] **Browser DevTools**: Performance and Memory tabs for runtime analysis
+
+#### Simple Workflow
+
+- [ ] Check WASM bundle size: `twiggy top particle_sim_bg.wasm`
+- [ ] Monitor frame rate in browser DevTools Performance tab
+- [ ] Watch memory usage during particle simulation
+
+#### Quick Success Metrics
+
+- **Frame Rate**: Smooth animation (aim for 60fps)
+- **Bundle Size**: Reasonable WASM file size
+- **Memory**: No obvious leaks during long runs
+
 ## Detailed Implementation Plan
 
 ### 1. Project Scaffolding
