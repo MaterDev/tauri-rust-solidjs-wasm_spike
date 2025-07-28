@@ -96,11 +96,13 @@
 
 ### 1. Project Scaffolding
 
-- [ ] Initialize a new Tauri project configured for a SolidJS frontend
+- [x] Initialize a new Tauri project configured for a SolidJS frontend
 
 > **Tauri Init Note**: Correct parameter is `--frontend-dist` not `--dist-dir` for specifying frontend build directory.
 
 > **Package Manager**: Using Bun instead of npm for faster package management and script execution, with Vite as the build tool.
+
+> **Tauri Init Complete**: Successfully created `src-tauri/` directory with Rust backend configured for Bun commands (`bun run dev`, `bun run build`).
 - [ ] Inside the `src-tauri` directory, create a new Rust library crate named `particle_sim` (separate from main Tauri Rust application)
 - [ ] Configure the root `Cargo.toml` to include `particle_sim` as a workspace member
 - [ ] Configure `particle_sim` crate's `Cargo.toml` to produce a `cdylib` library type and include `wasm-bindgen` as a dependency
