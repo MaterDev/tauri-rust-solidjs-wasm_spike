@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Goal**: Create a desktop application using Tauri that demonstrates a real-world use case for WebAssembly by running a particle physics simulation in a Rust/WASM module and rendering the output in a SolidJS frontend using three.js.
+**Goal**: Create a desktop application using Tauri that demonstrates a real-world use case for WebAssembly by running a particle physics simulation in a Rust/WASM module and rendering the output in a SolidJS frontend using PixiJS.
 
 **Project Title**: WASM-Powered Particle Fountain
 
@@ -10,7 +10,7 @@
 
 - **Application Framework**: Tauri
 - **Frontend UI**: SolidJS with Vite
-- **3D Rendering**: three.js
+- **2D Rendering**: PixiJS
 - **Computation/Logic**: Rust compiled to WebAssembly (WASM)
 
 ## Environment Setup (WASM Prerequisites)
@@ -126,34 +126,33 @@
 
 #### Dependencies
 
-- [ ] Add three.js to frontend's `package.json`
+- [ ] Add PixiJS to frontend's `package.json`
 
 #### WASM Integration
 
 - [ ] Build `particle_sim` crate into WASM using `wasm-pack`
 - [ ] Place output (`.wasm` and generated `.js` files) into `public` directory
 
-#### Main Component (`App.jsx` or `Scene.jsx`)
+#### Main Component (`App.tsx` or `Scene.tsx`)
 
 - [ ] Use `onMount` lifecycle hook to set up the experience
-- [ ] Initialize three.js `Scene`, `PerspectiveCamera`, and `WebGLRenderer`
-- [ ] Append renderer's DOM element to component
+- [ ] Initialize PixiJS `Application` and `Container`
+- [ ] Append PixiJS canvas to component
 - [ ] Asynchronously load and instantiate `particle-sim.wasm` module
 - [ ] Once WASM loaded:
-  - [ ] Create three.js geometry
-  - [ ] Create `BufferGeometry` and `PointsMaterial` (small white dots)
+  - [ ] Create PixiJS particle container
+  - [ ] Create particle sprites (small white dots)
   - [ ] Call WASM `tick()` function to get initial particle positions
-  - [ ] Initialize position attribute of `BufferGeometry` with data
-  - [ ] Create `Points` object and add to scene
+  - [ ] Initialize particle positions from WASM data
+  - [ ] Add particle container to stage
 
 #### Animation Loop
 
 - [ ] Create `animate` function using `requestAnimationFrame`
 - [ ] Inside loop:
   - [ ] Call WASM `tick()` function for updated positions
-  - [ ] Update `BufferGeometry`'s position attribute with new array
-  - [ ] Set `geometry.attributes.position.needsUpdate = true`
-  - [ ] Render scene with camera
+  - [ ] Update particle sprite positions from WASM data
+  - [ ] Render PixiJS application
 - [ ] Start animate loop
 
 ### 4. Build & Development Setup
@@ -175,13 +174,15 @@ tauri-rust-solidjs-wasm_spike/
 │       └── src/
 │           └── lib.rs
 ├── src/
-│   ├── App.jsx
-│   └── main.js
+│   ├── App.tsx
+│   └── main.ts
 ├── public/
 │   └── (WASM output files)
 ├── Cargo.toml (workspace)
 ├── package.json
-└── PROJECT_PLAN.md (this file)
+├── PROJECT_PLAN.md (this file)
+├── README.md
+└── LICENSE
 ```
 
 ## Task Checklist
@@ -200,7 +201,7 @@ tauri-rust-solidjs-wasm_spike/
 
 ### Phase 3: Frontend Integration
 
-- [ ] Set up three.js scene
+- [ ] Set up PixiJS scene
 - [ ] Load WASM module
 - [ ] Implement animation loop
 
@@ -216,13 +217,13 @@ The project is complete when:
 
 1. Particles simulate realistic physics (gravity, respawning)
 2. Smooth 60fps rendering of 5,000+ particles
-3. Seamless data flow from Rust/WASM to JavaScript/three.js
+3. Seamless data flow from Rust/WASM to JavaScript/PixiJS
 4. Clean, maintainable code architecture
 5. Proper build and development workflows
 
 ## Notes
 
 - This project demonstrates CPU-intensive logic handled by high-performance Rust/WASM
-- Rendering and UI managed by modern JavaScript framework
+- Rendering and UI managed by modern TypeScript/SolidJS framework
 - Showcases hybrid application architecture with seamless WASM-JS data flow
 - Perfect example of leveraging each technology's strengths

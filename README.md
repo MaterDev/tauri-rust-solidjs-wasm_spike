@@ -1,24 +1,19 @@
 # WASM-Powered Particle Fountain (Spike)
 
-> **⚡ This is a technical spike** - An experimental project to explore and validate the integration of Tauri, Rust/WebAssembly, SolidJS, and three.js for high-performance desktop applications.
+> **⚡ This is a technical spike** - An experimental project to explore and validate the integration of Tauri, Rust/WebAssembly, SolidJS, and PixiJS for high-performance desktop applications.
 
-## 🎯 Spike Objectives
+## 🎯 Goals
 
-This spike aims to answer key technical questions:
-
-- Can Rust/WASM effectively handle real-time physics calculations?
-- How seamless is the data flow between WASM and modern JS frameworks?
-- What's the performance ceiling for particle simulations in this architecture?
-- How well do these technologies integrate in a Tauri desktop app?
+Explore Rust/WASM integration with modern frontend frameworks by building a real-time particle simulation.
 
 ## 📋 What We're Building
 
-A particle fountain simulation demonstrating:
+A particle fountain with:
 
-- **Physics Engine**: Rust/WASM module calculating particle movement, gravity, and lifecycle
-- **3D Rendering**: three.js visualizing thousands of particles in real-time
-- **Modern UI**: SolidJS managing the reactive frontend
-- **Desktop App**: Tauri providing native desktop experience
+- **Physics**: Rust/WASM handles 5,000+ particles with gravity and lifecycle
+- **Rendering**: PixiJS provides hardware-accelerated 2D graphics
+- **UI**: SolidJS + TypeScript for reactive frontend
+- **Desktop**: Tauri for native app experience
 
 ## 🛠️ Tech Stack
 
@@ -26,7 +21,7 @@ A particle fountain simulation demonstrating:
 |-----------|------------|---------|
 | Desktop Framework | Tauri | Native desktop wrapper |
 | Frontend UI | SolidJS + Vite | Reactive UI and dev tooling |
-| 3D Rendering | three.js | Hardware-accelerated graphics |
+| 2D Rendering | PixiJS | Hardware-accelerated graphics |
 | Physics Engine | Rust + WebAssembly | High-performance computations |
 | Build Tools | wasm-pack, Cargo | WASM compilation |
 
@@ -40,15 +35,16 @@ tauri-rust-solidjs-wasm_spike/
 │   └── particle_sim/          # WASM physics module
 │       ├── Cargo.toml
 │       └── src/lib.rs
-├── src/                       # SolidJS frontend
-│   ├── App.jsx
-│   └── main.js
+├── src/                       # SolidJS frontend (TypeScript)
+│   ├── App.tsx
+│   └── main.ts
 ├── public/                    # Static assets + WASM output
 │   └── (WASM files)
 ├── Cargo.toml                 # Workspace configuration
 ├── package.json               # Frontend dependencies
 ├── PROJECT_PLAN.md            # Detailed implementation plan
-└── README.md                  # This file
+├── README.md                  # This file
+└── LICENSE                    # MIT License
 ```
 
 ## 🚀 Getting Started
@@ -131,7 +127,7 @@ This spike is successful if we achieve:
 ### Framework Integration
 
 - SolidJS lifecycle with WASM modules
-- three.js buffer geometry updates
+- PixiJS particle container updates
 - Tauri's role in the architecture
 
 ### Development Workflow
@@ -153,19 +149,15 @@ This spike is successful if we achieve:
 2. **Bundle Size**: Run `twiggy top particle_sim_bg.wasm` to see WASM size
 3. **Memory**: Watch Memory tab for any obvious leaks
 
-*Keep it simple - the goal is to see WASM working, not deep performance analysis*
+> *Keep it simple - the goal is to see WASM working, not deep performance analysis*
 
-## 📝 Lessons Learned
-
-> *This section will be updated as we progress through the spike*
-
-## 🔗 Related Resources
+## 🔗 Resources
 
 - [Tauri Documentation](https://tauri.app/)
 - [SolidJS Guide](https://www.solidjs.com/)
-- [three.js Documentation](https://threejs.org/docs/)
+- [PixiJS Documentation](https://pixijs.com/)
 - [wasm-bindgen Book](https://rustwasm.github.io/wasm-bindgen/)
 
 ## 📄 License
 
-This spike is for educational and experimental purposes.
+MIT License - see [LICENSE](LICENSE) file for details.
