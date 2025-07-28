@@ -53,6 +53,8 @@
 - [x] Install system dependencies for Tauri development
 
 > **macOS Dependencies Notes**: Xcode Command Line Tools already installed at `/Library/Developer/CommandLineTools`. All Tauri system dependencies satisfied.
+>
+> **Implementation Approach**: Using hands-on learning method where user runs commands and writes code directly for better understanding. AI provides step-by-step guidance, explanations, and code to copy.
 
 ### WASM Development Workflow Overview
 
@@ -95,6 +97,10 @@
 ### 1. Project Scaffolding
 
 - [ ] Initialize a new Tauri project configured for a SolidJS frontend
+
+> **Tauri Init Note**: Correct parameter is `--frontend-dist` not `--dist-dir` for specifying frontend build directory.
+
+> **Package Manager**: Using Bun instead of npm for faster package management and script execution, with Vite as the build tool.
 - [ ] Inside the `src-tauri` directory, create a new Rust library crate named `particle_sim` (separate from main Tauri Rust application)
 - [ ] Configure the root `Cargo.toml` to include `particle_sim` as a workspace member
 - [ ] Configure `particle_sim` crate's `Cargo.toml` to produce a `cdylib` library type and include `wasm-bindgen` as a dependency
