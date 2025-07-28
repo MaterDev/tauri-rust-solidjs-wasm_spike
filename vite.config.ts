@@ -7,7 +7,7 @@ import solidPlugin from 'vite-plugin-solid';
 export default defineConfig({
   plugins: [solidPlugin()],
   server: {
-    port: 3000,
+    port: 5173,
   },
   test: {
     environment: 'jsdom',

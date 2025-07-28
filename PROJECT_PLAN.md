@@ -103,6 +103,14 @@
 > **Package Manager**: Using Bun instead of npm for faster package management and script execution, with Vite as the build tool.
 
 > **Tauri Init Complete**: Successfully created `src-tauri/` directory with Rust backend configured for Bun commands (`bun run dev`, `bun run build`).
+
+> **SolidJS Frontend Setup**: Created SolidJS + TypeScript frontend with `ts-vitest` template. Package.json configured with Vite, SolidJS 1.9.7, TypeScript 5.8.3, and Vitest for testing.
+
+> **Bun Configuration**: Successfully migrated from pnpm to Bun. Removed pnpm-lock.yaml, created bun.lock. PixiJS 8.11.0 and @types/pixi.js 5.0.0 installed with Bun.
+
+> **Animation Requirement**: Particle fountain animation should be full-screen within the Tauri desktop window.
+
+> **Tauri Dev Mode**: Successfully tested `bun run tauri:dev`. Fixed Vite port configuration (3000→5173). Desktop app launches with SolidJS frontend and hot reloads working correctly.
 - [ ] Inside the `src-tauri` directory, create a new Rust library crate named `particle_sim` (separate from main Tauri Rust application)
 - [ ] Configure the root `Cargo.toml` to include `particle_sim` as a workspace member
 - [ ] Configure `particle_sim` crate's `Cargo.toml` to produce a `cdylib` library type and include `wasm-bindgen` as a dependency
