@@ -5,12 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <link rel="shortcut icon" type="image/ico" href="/src/assets/favicon.ico" />
-    <title>Solid App</title>
+    <title>WASM Particle Fountain</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
 
-    <script src="/src/app.tsx" type="module"></script>
+    <script type="module">
+      // Global error handler
+      window.addEventListener('error', (event) => {
+        console.error('Global error caught:', event.error);
+      });
+
+      // Unhandled promise rejection handler
+      window.addEventListener('unhandledrejection', (event) => {
+        console.error('Unhandled promise rejection:', event.reason);
+      });
+    </script>
+    <script src="/src/index.tsx" type="module"></script>
   </body>
 </html>
