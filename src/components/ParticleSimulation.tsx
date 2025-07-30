@@ -42,23 +42,37 @@ const ParticleSimulation: Component = () => {
     lifetime: 5000,                       // Particle lifetime in ms
     gravity: -0.1,                        // Negative gravity effect (pulls upward)
     initialSpeed: { min: 2, max: 5 },     // Initial speed range
-    size: { min: 1, max: 3 }              // Size range
+    size: { min: 1, max: 3 },             // Size range
+    colors: [                             // Available colors for randomization
+      0xFF4500, // Orange Red
+      0x00BFFF, // Deep Sky Blue
+      0x7FFF00, // Chartreuse
+      0xFF00FF, // Magenta
+      0xFFFF00, // Yellow
+      0x00FFFF, // Cyan
+      0xFFD700  // Gold
+    ]
   };
   
   // Particle class to manage individual particle state
   class Particle {
-    sprite: Sprite;
-    velocity: { x: number; y: number };
-    age: number;
-    maxAge: number;
-    active: boolean;
+    x: number = 0;
+    y: number = 0;
+    velocity = { x: 0, y: 0 };
+    age: number = 0;
+    lifetime: number;
+    active: boolean = false;
+    alpha: number = 1;
+    size: number;
+    color: number;
+    sprite: Sprite | null = null;
     
-    constructor(sprite: Sprite) {
-      this.sprite = sprite;
-      this.velocity = { x: 0, y: 0 };
-      this.age = 0;
-      this.maxAge = 0;
-      this.active = false;
+    constructor() {
+      this.lifetime = emitterConfig.lifetime;
+      this.size = emitterConfig.size.min + Math.random() * (emitterConfig.size.max - emitterConfig.size.min);
+      // Assign random color from the color pool
+      const colorIndex = Math.floor(Math.random() * emitterConfig.colors.length);
+      this.color = emitterConfig.colors[colorIndex];
     }
     
     init() {
@@ -73,48 +87,51 @@ const ParticleSimulation: Component = () => {
       this.velocity.x = Math.cos(angle) * speed;
       this.velocity.y = Math.sin(angle) * speed;
       
-      // Random size
-      const size = emitterConfig.size.min + 
-                  Math.random() * (emitterConfig.size.max - emitterConfig.size.min);
-      this.sprite.scale.set(size, size);
-      
-      // Position and visual properties
-      this.sprite.position.set(x, y);
-      this.sprite.alpha = 0.8 + Math.random() * 0.2; // Slight variation in opacity
-      
-      // Age properties
+      this.x = x;
+      this.y = y;
       this.age = 0;
-      this.maxAge = emitterConfig.lifetime * (0.8 + Math.random() * 0.4); // Variation in lifetime
-      
-      // Activate
       this.active = true;
-      this.sprite.visible = true;
+      this.alpha = 1;
       
-      return this;
+      // Random size within the configured range
+      this.size = emitterConfig.size.min + 
+                  Math.random() * (emitterConfig.size.max - emitterConfig.size.min);
+      
+      // Assign random color from the color pool
+      const colorIndex = Math.floor(Math.random() * emitterConfig.colors.length);
+      this.color = emitterConfig.colors[colorIndex];
+                  
+      if (this.sprite) {
+        this.sprite.x = this.x;
+        this.sprite.y = this.y;
+        this.sprite.alpha = this.alpha;
+        this.sprite.scale.set(this.size);
+        this.sprite.tint = this.color; // Apply the color tint
+      }
     }
     
     update(deltaMS: number) {
       if (!this.active) return false;
       
       this.age += deltaMS;
-      if (this.age >= this.maxAge) {
+      if (this.age >= this.lifetime) {
         // Particle died
         this.active = false;
-        this.sprite.visible = false;
+        this.sprite!.visible = false;
         return false;
       }
       
       // Update position based on velocity
       this.velocity.y += emitterConfig.gravity; // Apply gravity
       
-      const x = this.sprite.position.x + this.velocity.x;
-      const y = this.sprite.position.y + this.velocity.y;
-      this.sprite.position.set(x, y);
+      const x = this.sprite!.position.x + this.velocity.x;
+      const y = this.sprite!.position.y + this.velocity.y;
+      this.sprite!.position.set(x, y);
       
       // Fade out near end of life
-      if (this.age > this.maxAge * 0.7) {
-        const fadeRatio = 1 - ((this.age - this.maxAge * 0.7) / (this.maxAge * 0.3));
-        this.sprite.alpha = Math.max(0, fadeRatio) * 0.8;
+      if (this.age > this.lifetime * 0.7) {
+        const fadeRatio = 1 - ((this.age - this.lifetime * 0.7) / (this.lifetime * 0.3));
+        this.sprite!.alpha = Math.max(0, fadeRatio) * 0.8;
       }
       
       return true;
@@ -130,10 +147,20 @@ const ParticleSimulation: Component = () => {
       if (!texture || !particleContainer) return;
       
       for (let i = 0; i < size; i++) {
+        // Create a new particle
+        const particle = new Particle();
+        
+        // Create sprite using the texture
         const sprite = new Sprite(texture);
         sprite.anchor.set(0.5);
-        sprite.visible = false;
-        particleContainer.addChild(sprite);
+        sprite.visible = false; // Initially hidden
+        sprite.tint = particle.color; // Apply the random color tint
+        
+        // Assign sprite to particle and add to container
+        particle.sprite = sprite;
+        particleContainer!.addChild(sprite);
+        
+        // Add to pool
         particlePool.push(sprite);
       }
       info(`Created particle pool with ${size} sprites`);
@@ -148,18 +175,21 @@ const ParticleSimulation: Component = () => {
         const sprite = new Sprite(texture);
         sprite.anchor.set(0.5);
         sprite.visible = false;
-        particleContainer.addChild(sprite);
+        particleContainer!.addChild(sprite);
         particlePool.push(sprite);
       }
       
       // Get a particle from the pool
-      const sprite = particlePool.pop();
-      if (!sprite) return null;
+      const sprite = particlePool.pop()!;
+      const particle = new Particle();
+      particle.sprite = sprite;
+      particle.init();
+      sprite.visible = true;
+      sprite.tint = particle.color; // Apply the random color tint
       
-      // Create and initialize particle
-      const particle = new Particle(sprite).init();
-      this.particles.set(sprite, particle);
+      // Add to active particles AND to the particles map
       activeParticles.push(sprite);
+      this.particles.set(sprite, particle);
       
       return particle;
     },
@@ -181,6 +211,7 @@ const ParticleSimulation: Component = () => {
       // Update existing particles
       const deadParticles: Sprite[] = [];
       
+      // Iterate through all particles in the Map
       this.particles.forEach((particle, sprite) => {
         const alive = particle.update(deltaMS);
         if (!alive) {
@@ -190,12 +221,17 @@ const ParticleSimulation: Component = () => {
       
       // Remove dead particles
       deadParticles.forEach(sprite => {
-        this.particles.delete(sprite);
+        this.particles.delete(sprite); // Remove from Map
+        
+        // Remove from active particles array
         const index = activeParticles.indexOf(sprite);
         if (index !== -1) {
           activeParticles.splice(index, 1);
         }
-        particlePool.push(sprite); // Return to pool
+        
+        // Hide sprite and return to pool
+        sprite.visible = false;
+        particlePool.push(sprite);
       });
     }
   };
@@ -271,8 +307,9 @@ const ParticleSimulation: Component = () => {
       info('Particle container created and added to stage');
 
       // Create a texture for the particles
+      // Using white so we can tint it with different colors
       const graphics = new Graphics();
-      graphics.beginFill(0xffffff);
+      graphics.beginFill(0xffffff); // White base color for tinting
       graphics.drawCircle(0, 0, 2);
       graphics.endFill();
       
