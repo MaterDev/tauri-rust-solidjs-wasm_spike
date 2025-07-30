@@ -122,69 +122,84 @@
 
 **Data Structures:**
 
-- [ ] Define `Particle` struct containing:
+- [x] Define `Particle` struct containing:
   - `position: [f32; 3]`
   - `velocity: [f32; 3]`
   - `age: f32`
-- [ ] Define `Simulation` struct that holds:
+- [x] Define `Simulation` struct that holds:
   - `particles: Vec<Particle>`
+  - `time_step: f32`
 
 **Initialization:**
 
-- [ ] Implement `new()` function for `Simulation` that populates the vector with ~5,000 particles at origin `[0.0, 0.0, 0.0]`
+- [x] Implement `new()` function for `Simulation` that populates the vector with particles at origin `[0.0, 0.0, 0.0]`
 
 **Main Logic:**
 
-- [ ] Create public function `tick(&mut self)` decorated with `#[wasm_bindgen]`
-- [ ] `tick()` Logic:
-  - [ ] Iterate through every particle in `self.particles`
-  - [ ] Apply constant downward acceleration (gravity) to Y-component of velocity
-  - [ ] Update particle position based on velocity
-  - [ ] Increment particle age
-  - [ ] **Respawn Logic**: If particle age > 3.0 seconds OR Y-position < -1.0:
+- [x] Create public function `tick(&mut self)` decorated with `#[wasm_bindgen]`
+- [x] `tick()` Logic:
+  - [x] Iterate through every particle in `self.particles`
+  - [x] Apply constant downward acceleration (gravity = -0.8) to Y-component of velocity
+  - [x] Update particle position based on velocity
+  - [x] Increment particle age
+  - [x] **Respawn Logic**: If particle age > 3.0 seconds OR Y-position < -1.0:
     - Reset age to 0.0
     - Reset position to origin `[0.0, 0.0, 0.0]`
     - Assign new randomized initial upward velocity
-- [ ] Return flat `Float32Array` of all particle positions `[x1, y1, z1, x2, y2, z2, ...]`
+- [x] Return Vec<f32> of all particle positions, accessible from JavaScript as a Float32Array
+
+> **Implementation Notes**: Used `wasm-bindgen`, `rand`, and `getrandom` dependencies with `wasm-pack build --target web` for WASM compilation.
 
 ### 3. The SolidJS Frontend (`src` directory)
 
 #### Dependencies
 
-- [ ] Add PixiJS to frontend's `package.json`
+- [x] Add PixiJS to frontend's `package.json`
+
+> **Implementation Notes**: Using PixiJS v8.11.0 per user preference, with upgraded API usage. Bun is being used as the package manager instead of npm.
 
 #### WASM Integration
 
-- [ ] Build `particle_sim` crate into WASM using `wasm-pack`
-- [ ] Place output (`.wasm` and generated `.js` files) into `public` directory
+- [x] Build `particle_sim` crate into WASM using `wasm-pack`
+- [x] Place output (`.wasm` and generated `.js` files) into `public/wasm` directory
 
-#### Main Component (`App.tsx` or `Scene.tsx`)
+#### Main Component (`ParticleSimulation.tsx`)
 
-- [ ] Use `onMount` lifecycle hook to set up the experience
-- [ ] Initialize PixiJS `Application` and `Container`
-- [ ] Append PixiJS canvas to component
-- [ ] Asynchronously load and instantiate `particle-sim.wasm` module
-- [ ] Once WASM loaded:
-  - [ ] Create PixiJS particle container
-  - [ ] Create particle sprites (small white dots)
-  - [ ] Call WASM `tick()` function to get initial particle positions
-  - [ ] Initialize particle positions from WASM data
-  - [ ] Add particle container to stage
+- [x] Use `onMount` lifecycle hook to set up the experience
+- [x] Initialize PixiJS `Application` and `Container`
+- [x] Append PixiJS canvas to component (using `app.canvas` in PixiJS v8)
+- [x] Asynchronously load and instantiate `particle_sim.wasm` module
+- [x] Once WASM loaded:
+  - [x] Create PixiJS Container for particles
+  - [x] Create particle sprites (small white dots using Graphics)
+  - [x] Call WASM `tick()` function to get initial particle positions
+  - [x] Initialize particle positions from WASM data
+  - [x] Add particle container to stage
 
 #### Animation Loop
 
-- [ ] Create `animate` function using `requestAnimationFrame`
-- [ ] Inside loop:
-  - [ ] Call WASM `tick()` function for updated positions
-  - [ ] Update particle sprite positions from WASM data
-  - [ ] Render PixiJS application
-- [ ] Start animate loop
+- [x] Create `animate` function using PixiJS ticker
+- [x] Inside loop:
+  - [x] Call WASM `tick()` function for updated positions
+  - [x] Update particle sprite positions from WASM data
+  - [x] Calculate and display FPS
+  - [x] Render PixiJS application
+- [x] Start animate loop
+
+> **Implementation Notes**: Successfully migrated to PixiJS v8 API including named imports, `app.canvas` for view access, `renderer.extract.texture()` for texture generation, and updated container handling.
 
 ### 4. Build & Development Setup
 
-- [ ] Create build scripts for WASM compilation
-- [ ] Set up development workflow
-- [ ] Configure Tauri for development and production builds
+- [x] Create build scripts for WASM compilation
+- [x] Set up development workflow
+- [x] Configure Tauri for development and production builds
+
+> **Build Workflow**: To rebuild the WASM module:
+>
+> 1. `cd src-tauri/particle_sim`
+> 2. `wasm-pack build --target web`
+> 3. Copy output files: `cp -r pkg/* ../../public/wasm/`
+> 4. Run dev server: `bun run dev` or Tauri app: `bun run tauri:dev`
 
 ## Project Structure
 
@@ -214,21 +229,21 @@ tauri-rust-solidjs-wasm_spike/
 
 ### Phase 1: Project Setup
 
-- [ ] Initialize Tauri project with SolidJS
-- [ ] Set up workspace structure
-- [ ] Configure dependencies
+- [x] Initialize Tauri project with SolidJS
+- [x] Set up workspace structure
+- [x] Configure dependencies
 
 ### Phase 2: Rust/WASM Development
 
-- [ ] Create particle_sim crate
-- [ ] Implement physics simulation
-- [ ] Build and test WASM module
+- [x] Create particle_sim crate
+- [x] Implement physics simulation
+- [x] Build and test WASM module
 
 ### Phase 3: Frontend Integration
 
-- [ ] Set up PixiJS scene
-- [ ] Load WASM module
-- [ ] Implement animation loop
+- [x] Set up PixiJS scene
+- [x] Load WASM module
+- [x] Implement animation loop
 
 ### Phase 4: Testing & Polish
 

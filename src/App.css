@@ -1,0 +1,53 @@
+.App {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  text-align: center;
+  color: #e0e0e0;
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.App-header {
+  margin-bottom: 20px;
+}
+
+.App-header h1 {
+  margin: 0;
+  padding: 10px 0;
+  font-size: 2rem;
+}
+
+.App-header p {
+  margin: 0;
+  padding-bottom: 20px;
+  opacity: 0.8;
+}
+
+.particle-simulation {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.fps-counter {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 10;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.pixi-container {
+  width: 100%;
+  height: 100%;
+}
