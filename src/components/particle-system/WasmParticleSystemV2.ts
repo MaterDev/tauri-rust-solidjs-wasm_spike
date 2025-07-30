@@ -30,7 +30,9 @@ export class WasmParticleSystemV2 {
   private screenScale: number = 100; // Scale factor to convert WASM coordinates to screen pixels
   
   constructor(texture: Texture, emitterConfig: EmitterConfig) {
+    // Create ParticleContainer for better quality rendering
     this.particleContainer = new ParticleContainer();
+    
     this.emitterConfig = emitterConfig;
     this.particleTexture = texture;
     
@@ -71,16 +73,17 @@ export class WasmParticleSystemV2 {
       
       // Create PixiJS particles to match WASM particle count
       for (let i = 0; i < particleCount; i++) {
-        // Use PixiJS v8 Particle constructor with configuration object
+        // Use PixiJS v8 Particle constructor with smoother, smaller particles
+        const baseSize = 0.3 + Math.random() * 0.4; // Much smaller particles (0.3-0.7)
         const particle = new Particle({
           texture: this.particleTexture,
           x: this.centerX,
           y: this.centerY,
-          scaleX: 1 + Math.random() * 3,
-          scaleY: 1 + Math.random() * 3,
+          scaleX: baseSize,
+          scaleY: baseSize,
           tint: this.emitterConfig.colors[Math.floor(Math.random() * this.emitterConfig.colors.length)],
-          alpha: 1.0,
-          rotation: 0
+          alpha: 0.8, // Slightly transparent for better blending
+          rotation: Math.random() * Math.PI * 2 // Random initial rotation
         });
         
         this.particleList.push(particle);
@@ -139,19 +142,26 @@ export class WasmParticleSystemV2 {
           // Dynamic alpha based on distance and emitter config
           particle.alpha = Math.max(0.1, 1.0 - normalizedDistance * 0.8);
           
-          // Dynamic scale based on distance (particles shrink as they move away)
-          const baseScale = this.emitterConfig.particleSize.min + 
-            (this.emitterConfig.particleSize.max - this.emitterConfig.particleSize.min) * (1.0 - normalizedDistance);
+          // Dynamic scale based on distance (smoother scaling for less chunkiness)
+          const minScale = 0.2;
+          const maxScale = 0.6;
+          const baseScale = minScale + (maxScale - minScale) * (1.0 - normalizedDistance);
           particle.scaleX = baseScale;
           particle.scaleY = baseScale;
           
-          // Optional: Add slight rotation based on velocity (if WASM provides velocity data)
-          particle.rotation += 0.01 * (1.0 - normalizedDistance);
+          // Smooth rotation based on position for visual interest
+          particle.rotation += 0.005 * (1.0 - normalizedDistance);
           
-          // Color interpolation based on distance (optional enhancement)
-          if (normalizedDistance > 0.7) {
-            // Fade to darker colors as particles age/move away
-            particle.tint = 0x666666;
+          // Smooth color interpolation based on distance and age
+          if (normalizedDistance > 0.8) {
+            // Gradually fade to darker colors as particles age/move away
+            const fadeAmount = (normalizedDistance - 0.8) / 0.2; // 0 to 1
+            const originalColor = this.emitterConfig.colors[i % this.emitterConfig.colors.length];
+            const fadedColor = this.interpolateColor(originalColor, 0x333333, fadeAmount);
+            particle.tint = fadedColor;
+          } else {
+            // Keep original color for younger particles
+            particle.tint = this.emitterConfig.colors[i % this.emitterConfig.colors.length];
           }
         }
       }
@@ -217,6 +227,34 @@ export class WasmParticleSystemV2 {
       emissionRate: this.targetParticleCount / 3, // WASM respawns every 3 seconds
       duration: 3 // WASM particle lifetime is 3 seconds
     };
+  }
+
+  /**
+   * Interpolate between two colors
+   * @param color1 First color (hex)
+   * @param color2 Second color (hex) 
+   * @param factor Interpolation factor (0-1)
+   */
+  private interpolateColor(color1: number, color2: number, factor: number): number {
+    // Clamp factor between 0 and 1
+    factor = Math.max(0, Math.min(1, factor));
+    
+    // Extract RGB components
+    const r1 = (color1 >> 16) & 0xFF;
+    const g1 = (color1 >> 8) & 0xFF;
+    const b1 = color1 & 0xFF;
+    
+    const r2 = (color2 >> 16) & 0xFF;
+    const g2 = (color2 >> 8) & 0xFF;
+    const b2 = color2 & 0xFF;
+    
+    // Interpolate each component
+    const r = Math.round(r1 + (r2 - r1) * factor);
+    const g = Math.round(g1 + (g2 - g1) * factor);
+    const b = Math.round(b1 + (b2 - b1) * factor);
+    
+    // Combine back to hex
+    return (r << 16) | (g << 8) | b;
   }
 
   /**

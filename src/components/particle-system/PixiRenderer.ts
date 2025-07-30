@@ -49,33 +49,34 @@ export class PixiRenderer {
   }
 
   /**
-   * Create a simple particle texture
+   * Create a plain solid circle particle texture
    */
   private async createParticleTexture(): Promise<Texture> {
     try {
-      // Create a simple white circle texture programmatically
+      // Create a simple canvas for plain circle
       const canvas = document.createElement('canvas');
-      const size = 32;
+      const size = 32; // Smaller size for crisp circles
       canvas.width = size;
       canvas.height = size;
       
       const ctx = canvas.getContext('2d')!;
       const radius = size / 2;
       
-      // Create radial gradient for soft particle effect
-      const gradient = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-      gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.8)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      // Disable smoothing for crisp edges
+      ctx.imageSmoothingEnabled = false;
       
-      ctx.fillStyle = gradient;
+      // Create a plain solid white circle
+      ctx.fillStyle = 'white';
       ctx.beginPath();
-      ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+      ctx.arc(radius, radius, radius - 1, 0, Math.PI * 2); // -1 for clean edge
       ctx.fill();
       
-      // Convert canvas to PixiJS texture
+      // Convert canvas to PixiJS texture with crisp settings
       const texture = Texture.from(canvas);
-      info('Created particle texture');
+      // Use nearest neighbor for crisp pixels
+      texture.source.scaleMode = 'nearest';
+      
+      info('Created plain circle particle texture');
       return texture;
     } catch (err: any) {
       error(`Failed to create particle texture: ${err}`);
