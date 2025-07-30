@@ -6,20 +6,15 @@ import StatusDisplay from './particle-system/StatusDisplay';
 import ParticleControls from './particle-system/ParticleControls';
 import FpsChart from './particle-system/FpsChart';
 import { PixiRenderer } from './particle-system/PixiRenderer';
-import { ParticleSystem } from './particle-system/ParticleSystem';
+// Import WasmParticleSystem instead of ParticleSystem
+import { WasmParticleSystemV2 } from './particle-system/WasmParticleSystemV2';
 import { createEmitterConfig, updateEmitterPosition } from './particle-system/EmitterConfig';
-
-// Import WASM using dynamic import - will be resolved by Vite
-// Using dynamic import for browser compatibility
-let wasmModule: any = null;
-let wasmInitialized = false;
 
 const ParticleSimulation: Component = () => {
   const [fps, setFps] = createSignal<number>(0);
   const [status, setStatus] = createSignal<string>('Initializing...');
   const [particleCount, setParticleCount] = createSignal<number>(5000);
   const [fpsHistory, setFpsHistory] = createSignal<number[]>([]);
-  const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   
   // Maximum number of FPS samples to keep in history
   const MAX_FPS_HISTORY = 100;
@@ -30,22 +25,31 @@ const ParticleSimulation: Component = () => {
   
   // Create renderer and system instances
   let renderer = new PixiRenderer();
-  let particleSystem: ParticleSystem | null = null;
+  let particleSystem: WasmParticleSystemV2 | null = null;
   let emitterConfig = createEmitterConfig(windowWidth, windowHeight);
   
   // Animation tracking
   let lastTime = performance.now();
   let frameCount = 0;
   
-  // Function to update particle count without disrupting the particle flow
+  // Function to update particle count and update the WASM simulation
   const updateParticleCount = async (delta: number) => {
     const newCount = Math.max(1000, particleCount() + delta);
     setParticleCount(newCount);
     setStatus(`Updating particle count to ${newCount}...`);
     info(`Updating particle count to ${newCount}`);
     
-    // We only need to update the emission rate - the emitter system will handle the rest
-    setStatus(`Particle count updated to ${newCount}`);
+    // Update the fountain emission rate with the new count
+    if (particleSystem) {
+      try {
+        await particleSystem.setParticleCount(newCount);
+        const stats = particleSystem.getFountainStats();
+        setStatus(`Fountain updated: ${newCount} particles over 5s = ${stats.emissionRate.toFixed(1)} particles/sec`);
+      } catch (err: any) {
+        error(`Failed to update fountain emission: ${err}`);
+        setStatus(`Error updating fountain: ${err.message}`);
+      }
+    }
   };
   
   // Animation function takes delta time in milliseconds
@@ -76,11 +80,13 @@ const ParticleSimulation: Component = () => {
     try {
       // Update particle system if it exists
       if (particleSystem) {
-        particleSystem.update(deltaMS, particleCount());
+        particleSystem.update(deltaMS / 1000); // WasmParticleSystem uses seconds, not milliseconds
       
-        // Update status with active particle count
+        // Update status with fountain statistics and FPS
         if (frameCount % 60 === 0) { // Update once per second
-          setStatus(`Active particles: ${particleSystem.getActiveParticleCount()} | FPS: ${fps()}`);
+          const activeCount = particleSystem.getActiveParticleCount();
+          const stats = particleSystem.getFountainStats();
+          setStatus(`Active: ${activeCount} | Fountain: ${stats.targetCount} particles/5s (${stats.emissionRate.toFixed(1)}/s) | FPS: ${fps()}`);
         }
       }
     } catch (err: any) {
@@ -96,16 +102,22 @@ const ParticleSimulation: Component = () => {
     // Resize the renderer
     renderer.resize(windowWidth, windowHeight);
     
-    // Update emitter position
-    updateEmitterPosition(emitterConfig, windowWidth, windowHeight);
-    
-    // Update emitter config in particle system
+    // Update emitter configuration with new window dimensions
     if (particleSystem) {
-      particleSystem.updateEmitterConfig(emitterConfig);
+      const newConfig = createEmitterConfig(windowWidth, windowHeight);
+      particleSystem.updateEmitterConfig(newConfig);
+      info(`Updated emitter config for window resize: ${windowWidth}x${windowHeight}`);
     }
-    
-    info(`Resized renderer to ${windowWidth}x${windowHeight}`);
   };
+
+  // Effect to handle particle count changes from UI controls
+  createEffect(() => {
+    const count = particleCount();
+    // Only update if we have a meaningful change and the system is initialized
+    if (particleSystem && particleSystem.getActiveParticleCount() !== count && count > 0) {
+      updateParticleCount(count - particleCount()); // Update with the difference
+    }
+  });
 
   // Initialize the renderer and particle system
   const initializePixi = async (containerElement: HTMLDivElement) => {
@@ -122,17 +134,34 @@ const ParticleSimulation: Component = () => {
       
       // Make sure renderer and container are initialized
       if (renderer.container && renderer.texture) {
-        // Create the particle system
-        particleSystem = new ParticleSystem(renderer.container, renderer.texture, emitterConfig);
+        // Create WASM-only particle system v2 with emitter config
+        particleSystem = new WasmParticleSystemV2(renderer.texture, emitterConfig);
         
-        // Start animation loop
-        info('Starting animation loop');
-        lastTime = performance.now();
-        frameCount = 0;
-        renderer.addTickerCallback(animate);
-        info('Animation loop started');
-        
-        setStatus('Ready!');
+        try {
+          // Initialize the WASM particle system with the particle count
+          setStatus('Initializing WebAssembly particle system...');
+          const success = await particleSystem.initialize(particleCount());
+          if (!success) {
+            setStatus('Failed to initialize WebAssembly particle system');
+            return;
+          }
+          
+          // Add particle container to the PixiJS stage
+          renderer.container.addChild(particleSystem.getContainer());
+          
+          // Start animation loop
+          info('Starting animation loop');
+          lastTime = performance.now();
+          frameCount = 0;
+          renderer.addTickerCallback(animate);
+          info('Animation loop started with WebAssembly particle system');
+          
+          const stats = particleSystem.getFountainStats();
+          setStatus(`Ready! Fountain: ${stats.targetCount} particles/5s (${stats.emissionRate.toFixed(1)}/s) | WebAssembly powered`);
+        } catch (err: any) {
+          error(`Error initializing WebAssembly particle system: ${err}`);
+          setStatus(`WebAssembly Error: ${err.message}`);
+        }
       }
     } catch (err: any) {
       error(`Error initializing particle simulation: ${err}`);

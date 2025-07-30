@@ -1,100 +1,106 @@
-import { Component, createEffect, onMount } from 'solid-js';
+import { Component } from 'solid-js';
 
 interface FpsChartProps {
   fpsHistory: number[];
   maxFpsHistory: number;
 }
 
+/**
+ * FPS chart component for WASM particle system
+ * Shows a simple line chart of FPS history
+ */
 const FpsChart: Component<FpsChartProps> = (props) => {
-  let canvasRef: HTMLCanvasElement | undefined;
-  
-  // Draw FPS chart on canvas
-  const updateFpsChart = () => {
-    if (!canvasRef) return;
+  const chartWidth = 200;
+  const chartHeight = 60;
+  const maxFps = 120; // Scale chart to 120 FPS max
+
+  const createPath = () => {
+    if (props.fpsHistory.length < 2) return '';
     
-    const ctx = canvasRef.getContext('2d');
-    if (!ctx) return;
+    const stepX = chartWidth / (props.maxFpsHistory - 1);
+    const scaleY = chartHeight / maxFps;
     
-    // Clear canvas
-    ctx.clearRect(0, 0, canvasRef.width, canvasRef.height);
-    
-    // Draw background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvasRef.width, canvasRef.height);
-    
-    // Draw grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    
-    // Horizontal grid lines (FPS increments of 10)
-    for (let i = 0; i <= 6; i++) { 
-      const y = canvasRef.height - (i / 6) * canvasRef.height;
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvasRef.width, y);
+    let path = '';
+    props.fpsHistory.forEach((fps, index) => {
+      const x = index * stepX;
+      const y = chartHeight - (fps * scaleY);
       
-      // Add FPS label
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(`${i * 10}`, 5, y - 5);
-    }
-    ctx.stroke();
+      if (index === 0) {
+        path += `M ${x} ${y}`;
+      } else {
+        path += ` L ${x} ${y}`;
+      }
+    });
     
-    // Draw FPS line
-    const history = props.fpsHistory;
-    if (history.length > 1) {
-      ctx.strokeStyle = '#00ff00';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      
-      const step = canvasRef.width / (props.maxFpsHistory - 1);
-      
-      history.forEach((fps, index) => {
-        const x = index * step;
-        const y = canvasRef.height - (fps / 60) * canvasRef.height;
-        
-        if (index === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      });
-      
-      ctx.stroke();
-    }
-    
-    // Draw title
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('FPS CHART', canvasRef.width / 2, 15);
+    return path;
   };
-  
-  // Update chart when FPS history changes
-  createEffect(() => {
-    if (props.fpsHistory) {
-      updateFpsChart();
-    }
-  });
-  
+
+  const averageFps = () => {
+    if (props.fpsHistory.length === 0) return 0;
+    const sum = props.fpsHistory.reduce((a, b) => a + b, 0);
+    return Math.round(sum / props.fpsHistory.length);
+  };
+
   return (
-    <div
-      style={{
-        "position": "absolute",
-        "bottom": "10px",
-        "left": "10px",
-        "z-index": 100
-      }}
-    >
-      <canvas 
-        ref={canvasRef}
-        width="300" 
-        height="150"
-        style={{
-          "border-radius": "5px",
-          "box-shadow": "0 0 10px rgba(0, 0, 0, 0.5)"
+    <div style={{
+      position: 'fixed',
+      bottom: '10px',
+      left: '10px',
+      background: 'rgba(0, 0, 0, 0.8)',
+      color: 'white',
+      padding: '15px',
+      'border-radius': '8px',
+      'font-family': 'monospace',
+      'font-size': '12px',
+      'z-index': 1000,
+      border: '1px solid rgba(255, 255, 255, 0.2)'
+    }}>
+      <div style={{ 'margin-bottom': '10px', 'font-weight': 'bold', color: '#4ECDC4' }}>
+        📊 FPS Chart
+      </div>
+      <div style={{ 'margin-bottom': '8px', color: '#96CEB4' }}>
+        Avg: {averageFps()} FPS
+      </div>
+      <svg 
+        width={chartWidth} 
+        height={chartHeight}
+        style={{ 
+          background: 'rgba(255, 255, 255, 0.1)',
+          'border-radius': '4px'
         }}
-      />
+      >
+        {/* Grid lines */}
+        <defs>
+          <pattern id="grid" width="20" height="15" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 15" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        
+        {/* FPS line */}
+        <path
+          d={createPath()}
+          fill="none"
+          stroke="#4ECDC4"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        
+        {/* 60 FPS reference line */}
+        <line
+          x1="0"
+          y1={chartHeight - (60 * chartHeight / maxFps)}
+          x2={chartWidth}
+          y2={chartHeight - (60 * chartHeight / maxFps)}
+          stroke="rgba(254, 202, 87, 0.5)"
+          stroke-width="1"
+          stroke-dasharray="3,3"
+        />
+      </svg>
+      <div style={{ 'margin-top': '5px', color: '#FECA57', 'font-size': '10px' }}>
+        --- 60 FPS target
+      </div>
     </div>
   );
 };
