@@ -7,7 +7,6 @@
   ],
   "permissions": [
     "core:default",
-    "log:default",
-    "log:allow-log"
+    "log:default"
   ]
 }

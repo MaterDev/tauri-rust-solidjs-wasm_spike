@@ -1,22 +1,43 @@
 import { Component, onCleanup, onMount, createSignal } from 'solid-js';
 import { Application, Container, Graphics, Sprite, Ticker } from 'pixi.js';
-import init, { Simulation } from '../../public/wasm/particle_sim';
 import { info, error, debug } from '@tauri-apps/plugin-log';
+
+// Import WASM using dynamic import - will be resolved by Vite
+// Using dynamic import for browser compatibility
+let wasmModule: any = null;
+let wasmInitialized = false;
 
 const ParticleSimulation: Component = () => {
   const [fps, setFps] = createSignal<number>(0);
+  const [status, setStatus] = createSignal<string>('Initializing...');
   
   let container: HTMLDivElement | null = null;
   let app: Application | null = null;
   let particleContainer: Container | null = null;
   let particles: Sprite[] = [];
-  let simulation: Simulation | null = null;
-  
+  let simulation: { tick: () => Float32Array; get_count: () => number } | null = null;
+  let texture: any = null;
   let lastTime = 0;
   let frameCount = 0;
 
   const initializePixi = async (containerElement: HTMLDivElement) => {
+    setStatus('Initializing PixiJS...');
     info('Initializing PixiJS...');
+    
+    // Wait for WASM to be initialized
+    if (!wasmInitialized) {
+      setStatus('Waiting for WASM module to initialize...');
+      await new Promise<void>((resolve) => {
+        const checkWasm = () => {
+          if (wasmInitialized) {
+            resolve();
+          } else {
+            setTimeout(checkWasm, 100);
+          }
+        };
+        checkWasm();
+      });
+    }
     if (!containerElement) {
       error('Container reference is undefined');
       return;
@@ -37,23 +58,32 @@ const ParticleSimulation: Component = () => {
       containerElement.appendChild(app.canvas);
       info('Canvas appended to container');
 
-      // Initialize WASM module
-      info('Initializing WASM module...');
-      try {
-        await init();
-        info('WASM module initialized');
-      } catch (wasmError) {
-        error(`Failed to initialize WASM module: ${wasmError}`);
+      // Initialize WASM module if it's loaded
+      if (!wasmModule) {
+        error('WASM module not loaded');
+        setStatus('Error: WASM module not loaded');
         return;
       }
-
+      
       try {
+        setStatus('Initializing WASM module...');
+        info('Initializing WASM module...');
+        
+        // Initialize the WASM module
+        await wasmModule.default();
+        info('WASM module initialized');
+        setStatus('WASM module initialized');
+        
         // Create simulation with 5000 particles
         info('Creating simulation with 5000 particles');
-        simulation = new Simulation(5000);
-        info(`Simulation created with ${simulation.get_count()} particles`);
-      } catch (simError) {
-        error(`Failed to create simulation: ${simError}`);
+        setStatus('Creating simulation with 5000 particles...');
+        simulation = new wasmModule.Simulation(5000);
+        const particleCount = simulation ? simulation.get_count() : 0;
+        info(`Simulation created with ${particleCount} particles`);
+        setStatus(`Simulation created with ${particleCount} particles`);
+      } catch (err: any) {
+        error(`Failed to initialize WASM or create simulation: ${err}`);
+        setStatus(`Error: ${err.message || err}`);
         return;
       }
 
@@ -138,8 +168,19 @@ const ParticleSimulation: Component = () => {
     }
   };
 
-  onMount(() => {
+  onMount(async () => {
     info('ParticleSimulation component mounted');
+    setStatus('Loading WASM module...');
+    try {
+      // Dynamically import the WASM module
+      wasmModule = await import('../../public/wasm/particle_sim');
+      info('WASM module loaded successfully');
+      setStatus('WASM module loaded successfully');
+      wasmInitialized = true;
+    } catch (err: any) {
+      error(`Failed to import WASM module: ${err}`);
+      setStatus(`Failed to import WASM module: ${err.message || err}`);
+    }
   });
 
   onCleanup(() => {
@@ -154,6 +195,19 @@ const ParticleSimulation: Component = () => {
   return (
     <div class="particle-simulation">
       <div class="fps-counter">FPS: {fps()}</div>
+      <div class="status-message" style={{
+        "position": "absolute",
+        "top": "50px",
+        "left": "10px",
+        "color": "white",
+        "background-color": "rgba(0,0,0,0.5)",
+        "padding": "5px",
+        "border-radius": "3px",
+        "font-size": "12px",
+        "z-index": 100
+      }}>
+        Status: {status()}
+      </div>
       <div 
         ref={(el) => {
           container = el;
