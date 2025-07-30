@@ -10,6 +10,81 @@ let wasmInitialized = false;
 const ParticleSimulation: Component = () => {
   const [fps, setFps] = createSignal<number>(0);
   const [status, setStatus] = createSignal<string>('Initializing...');
+  const [particleCount, setParticleCount] = createSignal<number>(5000);
+  
+  // Function to update particle count without disrupting the simulation
+  const updateParticleCount = async (delta: number) => {
+    const newCount = Math.max(1000, particleCount() + delta);
+    setParticleCount(newCount);
+    setStatus(`Updating particle count to ${newCount}...`);
+    info(`Updating particle count to ${newCount}`);
+    
+    // Only update if WASM is already initialized and we have a simulation
+    if (wasmInitialized && wasmModule && simulation && particleContainer) {
+      try {
+        const currentCount = simulation.get_count();
+        
+        if (newCount > currentCount) {
+          // Need to add more particles
+          const additionalCount = newCount - currentCount;
+          info(`Adding ${additionalCount} new particles`);
+          
+          // Create a texture for the particles if needed
+          if (!texture && app) {
+            const graphics = new Graphics();
+            graphics.beginFill(0xffffff);
+            graphics.drawCircle(0, 0, 2);
+            graphics.endFill();
+            texture = app.renderer.extract.texture(graphics);
+          }
+          
+          // Keep existing particles and add new ones
+          if (texture) {
+            // Add the new particles
+            for (let i = 0; i < additionalCount; i++) {
+              const particle = new Sprite(texture);
+              particle.anchor.set(0.5);
+              particleContainer.addChild(particle);
+              particles.push(particle);
+              
+              // Initialize off-screen with transparency
+              particle.position.set(-10, -10);
+              particle.alpha = 0;
+            }
+            info(`Added ${additionalCount} new particle sprites, total now: ${particles.length}`);
+          }
+        } else if (newCount < currentCount) {
+          // Need to remove particles
+          const removeCount = currentCount - newCount;
+          info(`Removing ${removeCount} particles`);
+          
+          // Remove excess particles (from the end)
+          for (let i = 0; i < removeCount && particles.length > 0; i++) {
+            const particle = particles.pop();
+            if (particle) {
+              particle.destroy();
+            }
+          }
+          info(`Removed excess particles, ${particles.length} remaining`);
+        }
+        
+        // Create new simulation with new count
+        // Note: We'll keep the current particles' visual properties and just update the simulation
+        // This creates a more smooth visual experience even when the underlying simulation changes
+        const oldSimulation = simulation;
+        simulation = new wasmModule.Simulation(newCount);
+        
+        // We'll let the simulation start fresh, but keep the current visual state of particles
+        // This provides visual continuity even when the simulation state changes
+        setStatus(`Particle count updated to ${newCount}`);
+      } catch (err: any) {
+        error(`Failed to update particle count: ${err}`);
+        setStatus(`Error updating particle count: ${err.message || err}`);
+      }
+    } else {
+      info('Simulation not initialized yet, will use new count when initialized');
+    }
+  };
   
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   let app: Application | null = null;
@@ -81,13 +156,14 @@ const ParticleSimulation: Component = () => {
         info('WASM module initialized');
         setStatus('WASM module initialized');
         
-        // Create simulation with 5000 particles
-        info('Creating simulation with 5000 particles');
-        setStatus('Creating simulation with 5000 particles...');
-        simulation = new wasmModule.Simulation(5000);
-        const particleCount = simulation ? simulation.get_count() : 0;
-        info(`Simulation created with ${particleCount} particles`);
-        setStatus(`Simulation created with ${particleCount} particles`);
+        // Create simulation with initial particle count
+        const initialCount = particleCount();
+        info(`Creating simulation with ${initialCount} particles`);
+        setStatus(`Creating simulation with ${initialCount} particles...`);
+        simulation = new wasmModule.Simulation(initialCount);
+        const actualCount = simulation ? simulation.get_count() : 0;
+        info(`Simulation created with ${actualCount} particles`);
+        setStatus(`Simulation created with ${actualCount} particles`);
       } catch (err: any) {
         error(`Failed to initialize WASM or create simulation: ${err}`);
         setStatus(`Error: ${err.message || err}`);
@@ -218,7 +294,41 @@ const ParticleSimulation: Component = () => {
 
   return (
     <div class="particle-simulation">
-      <div class="fps-counter">FPS: {fps()}</div>
+      <div class="fps-counter">FPS: {fps()} | Particles: {particleCount()}</div>
+      <div class="controls" style={{
+        "position": "absolute",
+        "top": "10px",
+        "right": "10px",
+        "display": "flex",
+        "gap": "10px"
+      }}>
+        <button 
+          onClick={() => updateParticleCount(-1000)}
+          style={{
+            "background": "#333",
+            "color": "white",
+            "border": "none",
+            "padding": "5px 10px",
+            "border-radius": "3px",
+            "cursor": "pointer"
+          }}
+        >
+          -1000
+        </button>
+        <button 
+          onClick={() => updateParticleCount(1000)}
+          style={{
+            "background": "#333",
+            "color": "white",
+            "border": "none",
+            "padding": "5px 10px",
+            "border-radius": "3px",
+            "cursor": "pointer"
+          }}
+        >
+          +1000
+        </button>
+      </div>
       <div class="status-message" style={{
         "position": "absolute",
         "top": "50px",
