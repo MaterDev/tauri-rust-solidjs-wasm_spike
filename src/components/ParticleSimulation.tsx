@@ -1,4 +1,4 @@
-import { Component, onCleanup, onMount, createSignal } from 'solid-js';
+import { Component, onCleanup, onMount, createSignal, createEffect } from 'solid-js';
 import { Application, Container, Graphics, Sprite, Ticker } from 'pixi.js';
 import { info, error, debug } from '@tauri-apps/plugin-log';
 
@@ -11,7 +11,7 @@ const ParticleSimulation: Component = () => {
   const [fps, setFps] = createSignal<number>(0);
   const [status, setStatus] = createSignal<string>('Initializing...');
   
-  let container: HTMLDivElement | null = null;
+  const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   let app: Application | null = null;
   let particleContainer: Container | null = null;
   let particles: Sprite[] = [];
@@ -44,8 +44,9 @@ const ParticleSimulation: Component = () => {
     }
 
     try {
-      // Initialize PixiJS
-      app = new Application({
+      // Initialize PixiJS using the v8 async pattern
+      app = new Application();
+      await app.init({
         width: 800,
         height: 600,
         backgroundColor: 0x000000,
@@ -55,7 +56,13 @@ const ParticleSimulation: Component = () => {
       info('PixiJS Application created');
 
       // In PixiJS v8, the view is accessed as app.canvas
-      containerElement.appendChild(app.canvas);
+      if (app.canvas) {
+        containerElement.appendChild(app.canvas);
+      } else {
+        error('Canvas is undefined');
+        setStatus('Error: Canvas is undefined');
+        return;
+      }
       info('Canvas appended to container');
 
       // Initialize WASM module if it's loaded
@@ -173,13 +180,30 @@ const ParticleSimulation: Component = () => {
     setStatus('Loading WASM module...');
     try {
       // Dynamically import the WASM module
-      wasmModule = await import('../../public/wasm/particle_sim');
+      // Use relative path for Vite development compatibility
+      wasmModule = await import('../../public/wasm/particle_sim') as any;
       info('WASM module loaded successfully');
       setStatus('WASM module loaded successfully');
       wasmInitialized = true;
+      
+      // Now that WASM is loaded, if we already have a container ref, initialize PixiJS
+      const container = containerRef();
+      if (container) {
+        info('Container ref exists, initializing PixiJS after WASM load');
+        initializePixi(container);
+      }
     } catch (err: any) {
       error(`Failed to import WASM module: ${err}`);
       setStatus(`Failed to import WASM module: ${err.message || err}`);
+    }
+  });
+  
+  // Effect to trigger initialization when both container and WASM module are ready
+  createEffect(() => {
+    const container = containerRef();
+    if (container && wasmInitialized && !app) {
+      info('Container and WASM both ready, initializing PixiJS');
+      initializePixi(container);
     }
   });
 
@@ -210,13 +234,11 @@ const ParticleSimulation: Component = () => {
       </div>
       <div 
         ref={(el) => {
-          container = el;
-          if (el) {
-            info('Container ref assigned, initializing PixiJS');
-            initializePixi(el);
-          }
+          info('Container ref assigned');
+          setContainerRef(el);
         }} 
         class="pixi-container" 
+        style={{ width: '800px', height: '600px', margin: '0 auto', display: 'block' }}
       />
     </div>
   );
