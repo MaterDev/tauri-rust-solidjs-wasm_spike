@@ -22,6 +22,7 @@ const CanvasPerformanceTest: Component = () => {
   // System metrics tracking
   let lastMetricsCheck = Date.now();
   const METRICS_CHECK_INTERVAL = 1000; // Check system metrics every second
+  let metricsUpdateInterval: number | undefined;
 
   let testHarness: CanvasTestHarness | null = null;
   let performanceMonitor: number | null = null;
@@ -86,6 +87,17 @@ const CanvasPerformanceTest: Component = () => {
     
     // Start the system metrics tracking
     initializeSystemMetricsTracking();
+    
+    // Set up a regular interval for system metrics updates separate from the animation frame
+    if (metricsUpdateInterval) {
+      clearInterval(metricsUpdateInterval);
+    }
+    metricsUpdateInterval = setInterval(() => {
+      info('Metrics interval firing');
+      updateSystemMetrics().catch(err => {
+        error(`Failed to update system metrics from interval: ${err}`);
+      });
+    }, METRICS_CHECK_INTERVAL) as unknown as number;
     
     const monitor = () => {
       if (!testHarness) return;
