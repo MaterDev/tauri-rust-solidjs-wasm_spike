@@ -8,7 +8,6 @@ const App: Component = () => {
   info('Canvas Performance Test App rendering');
   return (
     <div class="App">
-      <h1>Canvas Performance Testing Harness</h1>
       <CanvasPerformanceTest />
     </div>
   );

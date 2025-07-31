@@ -1,5 +1,5 @@
-import { Graphics, Container } from 'pixi.js';
-import { info } from '@tauri-apps/plugin-log';
+import { Container, Graphics } from 'pixi.js';
+import { info, error } from '@tauri-apps/plugin-log';
 import { ObjectType, CanvasObject } from '../types/CanvasTypes';
 
 /**
@@ -34,8 +34,7 @@ export class CanvasObjectFactory {
       const y = Math.random() * (canvasHeight - 100) + 50;
       
       // Create graphics object
-      const graphic = new Graphics();
-      this.drawObject(graphic, objectType, color);
+      const graphic = this.createObject(i, x, y, 50 + Math.random() * 50, 50 + Math.random() * 50, objectType);
       
       // Create canvas object data
       const canvasObject: CanvasObject = {
@@ -43,8 +42,8 @@ export class CanvasObjectFactory {
         type: objectType,
         x,
         y,
-        width: 50 + Math.random() * 50,
-        height: 50 + Math.random() * 50,
+        width: graphic.width,
+        height: graphic.height,
         rotation: 0,
         scaleX: 0.5 + Math.random() * 1.0,
         scaleY: 0.5 + Math.random() * 1.0,
@@ -54,8 +53,6 @@ export class CanvasObjectFactory {
       };
       
       // Set initial transform
-      graphic.x = x;
-      graphic.y = y;
       graphic.scale.set(canvasObject.scaleX, canvasObject.scaleY);
       
       // Make interactive for selection testing
@@ -63,8 +60,7 @@ export class CanvasObjectFactory {
       graphic.cursor = 'pointer';
       graphic.on('pointerdown', (event) => onObjectPointerDown(event, canvasObject.id));
       
-      // Add to container and tracking
-      this.container.addChild(graphic);
+      // Add to tracking
       objects.set(i, canvasObject);
     }
     
@@ -72,30 +68,59 @@ export class CanvasObjectFactory {
   }
 
   /**
+   * Create a new canvas object
+   */
+  createObject(id: number, x: number, y: number, width: number, height: number, type: ObjectType): Graphics {
+    try {
+      const graphic = new Graphics();
+      
+      // Draw the object based on type
+      this.drawObject(graphic, type, width, height);
+      
+      // Position the object
+      graphic.position.set(x, y);
+      
+      // Add to the container
+      this.container.addChild(graphic);
+      
+      return graphic;
+    } catch (err) {
+      error(`Failed to create canvas object: ${err}`);
+      console.error('Error creating canvas object:', err);
+      return new Graphics(); // Return empty graphics object on error
+    }
+  }
+
+  /**
    * Draw different object types
    */
-  drawObject(graphic: Graphics, type: ObjectType, color: number): void {
+  drawObject(graphic: Graphics, type: ObjectType, width: number, height: number): void {
     graphic.clear();
     
     switch (type) {
       case ObjectType.Rectangle:
-        graphic.rect(0, 0, 60, 40);
+        graphic.beginFill(0xFF6B6B);
+        graphic.drawRect(0, 0, width, height);
+        graphic.endFill();
         break;
       case ObjectType.Circle:
-        graphic.circle(30, 30, 25);
+        graphic.beginFill(0x4ECDC4);
+        graphic.drawCircle(width / 2, height / 2, Math.min(width, height) / 2);
+        graphic.endFill();
         break;
       case ObjectType.ComplexPath:
         // Draw a more complex shape (star)
-        graphic.star(30, 30, 5, 25, 15);
+        graphic.beginFill(0x45B7D1);
+        graphic.drawStar(width / 2, height / 2, 5, Math.min(width, height) / 2, Math.min(width, height) / 4);
+        graphic.endFill();
         break;
       case ObjectType.Text:
         // For now, draw a rounded rectangle to represent text
-        graphic.roundRect(0, 0, 80, 30, 5);
+        graphic.beginFill(0xFF9FF3);
+        graphic.drawRoundedRect(0, 0, width, height, 10);
+        graphic.endFill();
         break;
     }
-    
-    // In PixiJS v8, fill() must be called after drawing the shapes
-    graphic.fill(color);
   }
   
   /**
@@ -104,6 +129,7 @@ export class CanvasObjectFactory {
   clearObjects(objects: Map<number, CanvasObject>): void {
     objects.forEach(obj => {
       this.container.removeChild(obj.graphic);
+      // In PixiJS v8, destroy() doesn't take parameters
       obj.graphic.destroy();
     });
     

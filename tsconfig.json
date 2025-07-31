@@ -8,6 +8,12 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client", "@testing-library/jest-dom"]
-  }
+    "types": ["vite/client", "@testing-library/jest-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "wasm/*": ["src-tauri/canvas_sim/pkg/*"],
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src", "src-tauri/canvas_sim/pkg"]
 }

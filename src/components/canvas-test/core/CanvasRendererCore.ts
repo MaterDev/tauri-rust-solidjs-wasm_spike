@@ -1,4 +1,7 @@
-import { Application, Container, FederatedPointerEvent } from 'pixi.js';
+// Import specific components from pixi.js using named imports (PixiJS v8 style)
+import { Application, Container, FederatedPointerEvent, Graphics } from 'pixi.js';
+// Import WASM simulation with init function
+import initWasm, { CanvasSimulation } from 'wasm/canvas_sim';
 import { info, error } from '@tauri-apps/plugin-log';
 import { ObjectType, TestMode, CanvasObject } from '../types/CanvasTypes';
 import { CanvasObjectFactory } from '../factories/CanvasObjectFactory';
@@ -23,15 +26,21 @@ export class CanvasRendererCore {
   private performanceMonitor: PerformanceMonitor;
   
   constructor(private containerElement: HTMLDivElement, wasmSimulation: CanvasSimulation | null = null) {
+    // Use PixiJS v8 Application setup with correct options
     this.app = new Application({
       background: '#f0f0f0',
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       width: window.innerWidth,
-      height: window.innerHeight
+      height: window.innerHeight,
+      autoDensity: true, // For proper scaling with high DPI displays
+      powerPreference: 'high-performance' // Request high performance GPU
     });
     
-    this.stage = this.app.stage;
+    this.stage = new Container();
+    this.app.stage.addChild(this.stage);
+    
+    // Add canvas to container - using app.canvas for PixiJS v8
     this.containerElement.appendChild(this.app.canvas);
     
     // Store WASM simulation reference
@@ -56,6 +65,8 @@ export class CanvasRendererCore {
   private setupEventListeners(): void {
     // Make stage interactive
     this.app.stage.eventMode = 'static';
+    
+    // Set hitArea - in PixiJS v8, need to use correct bounds
     this.app.stage.hitArea = this.app.screen;
     
     // Mouse/pointer events for interaction testing
@@ -82,7 +93,27 @@ export class CanvasRendererCore {
    * Handle pointer up events
    */
   private onPointerUp(event: FederatedPointerEvent): void {
-    this.interactionHandler.onPointerUp(event);
+    // InteractionHandler.onPointerUp doesn't need the event parameter
+    this.interactionHandler.onPointerUp();
+  }
+  
+  /**
+   * Start the render loop
+   */
+  /**
+   * Initialize the WASM module
+   */
+  async initializeWasm(): Promise<boolean> {
+    try {
+      info('Initializing WASM module in CanvasRendererCore...');
+      await initWasm();
+      info('WASM module successfully initialized in CanvasRendererCore');
+      return true;
+    } catch (err) {
+      error(`Failed to initialize WASM module in CanvasRendererCore: ${err}`);
+      console.error('WASM initialization error:', err);
+      return false;
+    }
   }
   
   /**
@@ -100,6 +131,9 @@ export class CanvasRendererCore {
     
     // Update objects based on test mode
     this.updateObjects();
+    
+    // In PixiJS v8, we don't need to call renderer.render manually,
+    // as rendering is handled automatically by the ticker
     
     this.performanceMonitor.endFrame();
   }
@@ -242,7 +276,7 @@ export class CanvasRendererCore {
     // Clear objects
     this.clearObjects();
     
-    // Destroy app
+    // Destroy app - in PixiJS v8, destroy() doesn't take parameters
     this.app.destroy();
     
     info('Canvas renderer destroyed and resources cleaned up');

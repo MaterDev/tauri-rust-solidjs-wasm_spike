@@ -23,7 +23,7 @@ const CanvasPerformanceTest: Component = () => {
   // System metrics tracking
   let lastMetricsCheck = Date.now();
   const METRICS_CHECK_INTERVAL = 1000; // Check system metrics every second
-  let metricsUpdateInterval: number | undefined;
+  let metricsUpdateInterval: ReturnType<typeof setInterval> | undefined;
 
   let testHarness: CanvasTestHarness_v2 | null = null;
   let performanceMonitor: number | null = null;
@@ -32,8 +32,16 @@ const CanvasPerformanceTest: Component = () => {
     try {
       info('Initializing Canvas Performance Test...');
       
+      // Create test harness and initialize it
       testHarness = new CanvasTestHarness_v2(containerElement);
-      await testHarness.initialize();
+      const initialized = await testHarness.initialize();
+      
+      if (!initialized) {
+        throw new Error('Failed to initialize test harness');
+      }
+      
+      // Set test mode based on UI selection
+      testHarness.setTestMode(getTestModeFromString(testMode()));
       
       // Create initial objects
       await testHarness.createObjects(objectCount());
@@ -44,6 +52,7 @@ const CanvasPerformanceTest: Component = () => {
       info('Canvas Performance Test initialized');
     } catch (err: any) {
       error(`Failed to initialize canvas test: ${err}`);
+      console.error('Canvas test initialization error:', err);
     }
   };
 
@@ -59,6 +68,7 @@ const CanvasPerformanceTest: Component = () => {
         info('Initial system metrics retrieved successfully');
       } catch (err) {
         error(`Failed to initialize system metrics: ${err}`);
+        console.error('System metrics initialization error:', err);
       }
     };
     
@@ -69,9 +79,6 @@ const CanvasPerformanceTest: Component = () => {
         const metrics: SystemMetrics = await invoke('get_system_metrics');
         info(`Raw metrics received: ${JSON.stringify(metrics)}`);
         
-        // Log previous values before setting new ones
-        info(`Previous metrics - CPU: ${cpuUsage().toFixed(1)}%, Memory: ${memoryUsage().toFixed(1)}%, Process: ${processMemory().toFixed(1)}MB`);
-        
         // Set new values
         setCpuUsage(metrics.cpu_usage);
         setMemoryUsage(metrics.memory_usage_percent);
@@ -79,10 +86,9 @@ const CanvasPerformanceTest: Component = () => {
         
         // Log confirmation of updates
         info(`System metrics updated - CPU: ${metrics.cpu_usage.toFixed(1)}%, Memory: ${metrics.memory_usage_percent.toFixed(1)}%, Process: ${metrics.process_memory_mb.toFixed(1)}MB`);
-        info(`Current state after update - CPU: ${cpuUsage().toFixed(1)}%, Memory: ${memoryUsage().toFixed(1)}%, Process: ${processMemory().toFixed(1)}MB`);
       } catch (err) {
         error(`Error getting system metrics: ${err}`);
-        console.error('Detailed error:', err);
+        console.error('System metrics update error:', err);
       }
     };
     
@@ -94,38 +100,31 @@ const CanvasPerformanceTest: Component = () => {
       clearInterval(metricsUpdateInterval);
     }
     metricsUpdateInterval = setInterval(() => {
-      info('Metrics interval firing');
-      updateSystemMetrics().catch(err => {
-        error(`Failed to update system metrics from interval: ${err}`);
-      });
-    }, METRICS_CHECK_INTERVAL) as unknown as number;
-    
+      updateSystemMetrics();
+    }, METRICS_CHECK_INTERVAL);
+
+    // Frame monitoring function
     const monitor = () => {
-      if (!testHarness) return;
+      if (!testHarness) {
+        // If test harness is no longer available, stop monitoring
+        return;
+      }
       
-      const now = performance.now();
+      // Calculate FPS
       frameCount++;
+      const now = performance.now();
       
-      // Update FPS every second
-      if (now - lastTime >= 1000) {
-        const currentFps = Math.round(frameCount / ((now - lastTime) / 1000));
-        setFps(currentFps);
-        frameCount = 0;
-        lastTime = now;
-        
-        // Get metrics from test harness
+      if (now - lastTime > 1000) { // Update every second
+        // Get performance metrics from test harness
         const metrics = testHarness.getPerformanceMetrics();
+        
+        // Set state values for UI
+        setFps(metrics.fps);
         setRenderTime(metrics.renderTime);
         
-        // Update system metrics from OS using Tauri's invoke API
-        if (now - lastMetricsCheck > METRICS_CHECK_INTERVAL) {
-          lastMetricsCheck = now;
-          
-          // Update system metrics asynchronously
-          updateSystemMetrics().catch(err => {
-            error(`Failed to update system metrics: ${err}`);
-          });
-        }
+        // Reset for next calculation
+        lastTime = now;
+        frameCount = 0;
       }
       
       performanceMonitor = requestAnimationFrame(monitor);
@@ -169,6 +168,10 @@ const CanvasPerformanceTest: Component = () => {
 
   onMount(() => {
     info('CanvasPerformanceTest component mounted');
+    const container = document.querySelector('.canvas-container');
+    if (container) {
+      initializeTest(container as HTMLDivElement);
+    }
   });
 
   onCleanup(() => {
@@ -283,18 +286,15 @@ const CanvasPerformanceTest: Component = () => {
       
       {/* Canvas Container */}
       <div 
-        ref={(el) => {
-          if (el) {
-            initializeTest(el);
-          }
-        }}
+        class="canvas-container"
         style={{
           width: '100vw',
           height: '100vh',
           position: 'fixed',
           top: 0,
           left: 0,
-          background: '#f0f0f0'
+          background: '#f0f0f0',
+          'z-index': 0
         }}
       />
     </div>

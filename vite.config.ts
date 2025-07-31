@@ -17,6 +17,7 @@ export default defineConfig({
     wasm(),
     topLevelAwait()
   ],
+
   server: {
     port: 5173,
   },
@@ -34,6 +35,7 @@ export default defineConfig({
   resolve: {
     conditions: ['development', 'browser'],
     alias: {
+      'wasm': path.resolve(__dirname, 'src-tauri/canvas_sim/pkg'),
       '@': path.resolve(__dirname, './src'),
       '@tauri-apps/api': path.resolve(__dirname, 'node_modules/@tauri-apps/api')
     }

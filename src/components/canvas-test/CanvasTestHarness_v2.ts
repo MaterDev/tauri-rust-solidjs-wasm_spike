@@ -1,7 +1,8 @@
 import { info, error } from '@tauri-apps/plugin-log';
 
 // Import WASM module for canvas object management
-import init, { CanvasSimulation } from '../../../src-tauri/canvas_sim/pkg';
+import initWasm, { CanvasSimulation } from 'wasm/canvas_sim';
+// Ensure CanvasSimulation is properly imported
 
 // Import types from the types module
 import { TestMode, PerformanceMetrics } from './types/CanvasTypes';
@@ -32,19 +33,40 @@ export class CanvasTestHarness_v2 {
   async initialize(): Promise<boolean> {
     try {
       info('Initializing WASM module...');
-      await init();
-      this.wasmSimulation = new CanvasSimulation();
+      
+      // Initialize the WASM module with error handling
+      try {
+        await initWasm();
+        info('WASM module initialized successfully');
+      } catch (wasmErr) {
+        error(`Failed to initialize WASM module: ${wasmErr}`);
+        console.error('WASM initialization error:', wasmErr);
+        return false;
+      }
+      
+      // Create the WASM simulation instance
+      try {
+        this.wasmSimulation = new CanvasSimulation();
+        info('Canvas simulation created successfully');
+      } catch (simErr) {
+        error(`Failed to create Canvas Simulation: ${simErr}`);
+        console.error('Canvas simulation error:', simErr);
+        return false;
+      }
       
       info('Creating CanvasRendererCore with WASM simulation...');
+      
       // Pass WASM simulation to the renderer core for proper integration
       this.renderer = new CanvasRendererCore(this.container, this.wasmSimulation);
       
+      // Start the render loop
       this.renderer.startRenderLoop();
       
       info('Canvas Test Harness V2 initialized successfully');
       return true;
     } catch (err) {
       error(`Failed to initialize Canvas Test Harness V2: ${err}`);
+      console.error('Canvas test harness initialization error:', err);
       return false;
     }
   }
