@@ -29,7 +29,7 @@ impl Simulation {
              .map(|_| {
                  // Generate explosive supernova radial velocity
                  let angle = rng.gen_range(0.0..std::f32::consts::PI * 2.0); // Full circle
-                 let speed = rng.gen_range(2.5..4.5); // High-speed explosion
+                 let speed = rng.gen_range(3.0..5.0); // Higher minimum speed to escape center
                  let vx = angle.cos() * speed;
                  let vy = angle.sin() * speed;
                  let vz = rng.gen_range(-0.5..0.5); // More Z variation for 3D effect
@@ -63,7 +63,8 @@ impl Simulation {
             let distance_from_center = (particle.position[0].powi(2) + particle.position[1].powi(2)).sqrt();
             
             // Apply continuous radial acceleration (supernova expansion)
-            if distance_from_center > 0.01 { // Avoid division by zero
+            if distance_from_center > 0.01 {
+                // Normal case: particle has moved away from center
                 let normalized_x = particle.position[0] / distance_from_center;
                 let normalized_y = particle.position[1] / distance_from_center;
                 
@@ -75,6 +76,13 @@ impl Simulation {
                 let explosion_multiplier = (3.0 - distance_from_center).max(0.0) / 3.0;
                 particle.velocity[0] += normalized_x * EXPLOSION_FORCE * explosion_multiplier * self.time_step;
                 particle.velocity[1] += normalized_y * EXPLOSION_FORCE * explosion_multiplier * self.time_step;
+            } else {
+                // Particle is stuck at center - give it a random kick to escape
+                let mut rng = rand::thread_rng();
+                let escape_angle = rng.gen_range(0.0..std::f32::consts::PI * 2.0);
+                let escape_speed = 3.0; // Strong escape velocity
+                particle.velocity[0] = escape_angle.cos() * escape_speed;
+                particle.velocity[1] = escape_angle.sin() * escape_speed;
             }
             
             // Update position based on velocity
@@ -97,7 +105,7 @@ impl Simulation {
                 // Assign new explosive supernova velocity
                 let mut rng = rand::thread_rng();
                 let angle = rng.gen_range(0.0..std::f32::consts::PI * 2.0); // Full circle explosion
-                let speed = rng.gen_range(2.5..4.5); // High-speed explosion
+                let speed = rng.gen_range(3.0..5.0); // Higher minimum speed to escape center
                 particle.velocity[0] = angle.cos() * speed;
                 particle.velocity[1] = angle.sin() * speed;
                 particle.velocity[2] = rng.gen_range(-0.5..0.5); // 3D explosion effect

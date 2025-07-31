@@ -73,8 +73,8 @@ export class WasmParticleSystemV2 {
       
       // Create PixiJS particles to match WASM particle count
       for (let i = 0; i < particleCount; i++) {
-        // Use PixiJS v8 Particle constructor with varied particle sizes
-        const baseSize = 0.4 + Math.random() * 1.2; // Varied sizes (0.4-1.6)
+        // Use PixiJS v8 Particle constructor with much smaller, varied particle sizes
+        const baseSize = 0.1 + Math.random() * 0.4; // Much smaller, varied sizes (0.1-0.5)
         const particle = new Particle({
           texture: this.particleTexture,
           x: this.centerX,
@@ -146,8 +146,8 @@ export class WasmParticleSystemV2 {
           particle.alpha = Math.max(0.1, 1.0 - normalizedDistance * 0.8);
           
           // Dynamic scale based on distance while preserving initial size variation
-          const initialSize = (particle as any).initialSize || 0.8; // Fallback if not stored
-          const sizeMultiplier = 0.3 + (1.0 - normalizedDistance) * 0.7; // Scale from 30% to 100%
+          const initialSize = (particle as any).initialSize || 0.3; // Smaller fallback for new size range
+          const sizeMultiplier = 0.5 + (1.0 - normalizedDistance) * 0.5; // Scale from 50% to 100% (less dramatic)
           const finalSize = initialSize * sizeMultiplier;
           particle.scaleX = finalSize;
           particle.scaleY = finalSize;
@@ -174,17 +174,14 @@ export class WasmParticleSystemV2 {
   }
 
   /**
-   * Get count of currently active (visible) particles
+   * Get count of currently active particles from WASM simulation
    */
   getActiveParticleCount(): number {
-    let activeCount = 0;
-    for (let i = 0; i < this.particleList.length; i++) {
-      const particle = this.particleList[i];
-      if (particle && particle.alpha > 0) {
-        activeCount++;
-      }
+    if (!this.wasmSimulation) {
+      return 0;
     }
-    return activeCount;
+    // Return the actual WASM particle count, not PixiJS particle count
+    return this.wasmSimulation.get_count();
   }
 
   /**
@@ -212,10 +209,18 @@ export class WasmParticleSystemV2 {
     
     info(`Updating particle count from ${this.targetParticleCount} to ${count}`);
     
-    // Clean up existing simulation
+    // Clean up existing WASM simulation
     if (this.wasmSimulation) {
       this.wasmSimulation.free();
+      this.wasmSimulation = null;
     }
+    
+    // Clean up existing PixiJS particles
+    this.particleList.length = 0;
+    this.particleContainer.removeParticles();
+    
+    // Reset initialization flag
+    this.isInitialized = false;
     
     // Reinitialize with new count
     await this.initialize(count);
@@ -276,7 +281,7 @@ export class WasmParticleSystemV2 {
     
     // Clear particles
     this.particleList.length = 0;
-    this.particleContainer.removeChildren();
+    this.particleContainer.removeParticles();
     
     this.isInitialized = false;
     info('WASM particle system v2 cleaned up');
