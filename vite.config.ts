@@ -5,6 +5,11 @@ import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [
@@ -28,5 +33,12 @@ export default defineConfig({
   },
   resolve: {
     conditions: ['development', 'browser'],
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@tauri-apps/api': path.resolve(__dirname, 'node_modules/@tauri-apps/api')
+    }
+  },
+  optimizeDeps: {
+    exclude: ['@tauri-apps/api']
   },
 });

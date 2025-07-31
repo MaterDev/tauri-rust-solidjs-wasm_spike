@@ -1,15 +1,15 @@
 import { Component } from 'solid-js';
-import ParticleSimulation from './components/ParticleSimulation';
+import CanvasPerformanceTest from './components/CanvasPerformanceTest';
 import './App.css';
 import { info } from '@tauri-apps/plugin-log';
 
 
 const App: Component = () => {
-  info('App component rendering');
+  info('Canvas Performance Test App rendering');
   return (
     <div class="App">
-      <h1>WASM Particle Fountain</h1>
-      <ParticleSimulation />
+      <h1>Canvas Performance Testing Harness</h1>
+      <CanvasPerformanceTest />
     </div>
   );
 };

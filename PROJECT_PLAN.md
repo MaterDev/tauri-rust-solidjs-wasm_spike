@@ -1,17 +1,26 @@
-# WASM-Powered Particle Fountain Project Plan
+# Canvas Performance Testing Harness Project Plan
 
 ## Project Overview
 
-**Goal**: Create a desktop application using Tauri that demonstrates a real-world use case for WebAssembly by running a particle physics simulation in a Rust/WASM module and rendering the output in a SolidJS frontend using PixiJS.
+**Goal**: Create a performance testing harness using Tauri to validate that PixiJS + WASM can handle the demanding rendering requirements of a professional canvas application (like Figma) for comic creation. This spike will test object density, transformations, interactions, and memory management at scale.
 
-**Project Title**: WASM-Powered Particle Fountain
+**Project Title**: Canvas Performance Testing Harness for Comic Creation App
 
 ## Core Technologies
 
 - **Application Framework**: Tauri
 - **Frontend UI**: SolidJS with Vite
-- **2D Rendering**: PixiJS
-- **Computation/Logic**: Rust compiled to WebAssembly (WASM)
+- **2D Rendering**: PixiJS v8
+- **Performance Logic**: Rust compiled to WebAssembly (WASM)
+- **Package Manager**: Bun
+
+## Target Use Case
+
+**Comic Creation App**: A Figma-like canvas application for creating comics that needs to handle:
+- Thousands of vector objects (panels, speech bubbles, text, artwork)
+- Complex transformations (scaling, rotation, grouping)
+- Real-time interactions (dragging, resizing, selection)
+- Smooth 60fps performance even with heavy scenes
 
 ## Environment Setup (WASM Prerequisites)
 
@@ -233,37 +242,64 @@ tauri-rust-solidjs-wasm_spike/
 - [x] Set up workspace structure
 - [x] Configure dependencies
 
-### Phase 2: Rust/WASM Development
+### Phase 2: Canvas Test Harness Development
 
-- [x] Create particle_sim crate
-- [x] Implement physics simulation
-- [x] Build and test WASM module
+- [ ] Clean up legacy particle system code
+- [ ] Refactor WASM module for canvas object management
+- [ ] Implement object creation, transformation, and selection logic
+- [ ] Build and test new WASM module
 
 ### Phase 3: Frontend Integration
 
-- [x] Set up PixiJS scene
-- [x] Load WASM module
-- [x] Implement animation loop
+- [ ] Create CanvasPerformanceTest component
+- [ ] Implement realistic canvas scenarios (static, rotating, scaling, interactive)
+- [ ] Set up performance monitoring (FPS, memory, render time)
+- [ ] Implement object count scaling controls
 
-### Phase 4: Testing & Polish
+### Phase 4: Performance Analysis
 
-- [ ] End-to-end testing
-- [ ] Performance optimization
-- [ ] Documentation
+- [ ] Run performance tests across different scenarios
+- [ ] Compare WASM vs pure JS performance
+- [ ] Document findings and optimization recommendations
+- [ ] Validate readiness for comic creation app development
 
 ## Success Criteria
 
 The project is complete when:
 
-1. Particles simulate realistic physics (gravity, respawning)
-2. Smooth 60fps rendering of 5,000+ particles
-3. Seamless data flow from Rust/WASM to JavaScript/PixiJS
-4. Clean, maintainable code architecture
-5. Proper build and development workflows
+1. **Object Density**: Smooth 60fps rendering of 10,000+ canvas objects (rectangles, circles, complex shapes)
+2. **Transformation Performance**: Real-time scaling, rotation, and translation of hundreds of objects
+3. **Interaction Responsiveness**: Mouse events and selection handling without frame drops
+4. **Memory Efficiency**: Stable memory usage during object creation/deletion cycles
+5. **WASM Integration**: Seamless data flow between Rust/WASM and PixiJS for canvas operations
+6. **Performance Metrics**: Clear correlation data between object count and frame rate
+7. **Scalability Validation**: Proof that the stack can handle comic creation app requirements
+
+## Test Scenarios
+
+### 1. Static Object Density Test
+- Render thousands of static objects (rectangles, circles, complex paths)
+- Measure FPS degradation as object count increases
+- Test memory usage patterns
+
+### 2. Transformation Stress Test
+- Continuously transform objects (scale, rotate, translate)
+- Simulate user interactions like dragging and resizing
+- Measure performance impact of real-time transformations
+
+### 3. Interactive Selection Test
+- Handle mouse events on thousands of objects
+- Implement selection states and hover effects
+- Test event handling performance at scale
+
+### 4. Memory Management Test
+- Dynamically add/remove objects
+- Test garbage collection performance
+- Monitor memory leaks during long-running sessions
 
 ## Notes
 
-- This project demonstrates CPU-intensive logic handled by high-performance Rust/WASM
-- Rendering and UI managed by modern TypeScript/SolidJS framework
-- Showcases hybrid application architecture with seamless WASM-JS data flow
-- Perfect example of leveraging each technology's strengths
+- This project validates PixiJS + WASM for professional canvas applications
+- Tests realistic comic creation app scenarios, not just synthetic benchmarks
+- Provides data-driven validation for technology stack decisions
+- Demonstrates hybrid architecture for high-performance web applications

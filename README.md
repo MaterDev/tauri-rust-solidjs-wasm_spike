@@ -1,17 +1,19 @@
-# WASM-Powered Particle Fountain (Spike)
+# WASM-Powered Canvas Performance Test Harness (Spike)
 
-> **⚡ This is a technical spike** - An experimental project to explore and validate the integration of Tauri, Rust/WebAssembly, SolidJS, and PixiJS for high-performance desktop applications.
+> **⚡ This is a technical spike** - An experimental project to explore and validate the integration of Tauri, Rust/WebAssembly, SolidJS, and PixiJS for high-performance canvas applications similar to Figma or comic creation tools.
 
 ## 🎯 Goals
 
-Explore Rust/WASM integration with modern frontend frameworks by building a real-time particle simulation.
+Validate Rust/WASM integration with modern frontend frameworks for building high-performance canvas editing applications, with a focus on object management, transformations, and rendering efficiency.
 
 ## 📋 What We're Building
 
-A particle fountain with:
+A canvas performance test harness with:
 
-- **Physics**: Rust/WASM handles 5,000+ particles with gravity and lifecycle
-- **Rendering**: PixiJS provides hardware-accelerated 2D graphics
+- **Object Management**: Rust/WASM handles thousands of canvas objects with various shapes and transforms
+- **Rendering**: PixiJS v8 provides hardware-accelerated 2D graphics with efficient drawing methods
+- **Performance Metrics**: Real-time monitoring of FPS, memory usage, render time, and object counts
+- **Test Scenarios**: Multiple test modes including static, rotating, scaling, interactive, and stress tests
 - **UI**: SolidJS + TypeScript for reactive frontend
 - **Desktop**: Tauri for native app experience
 
@@ -21,30 +23,40 @@ A particle fountain with:
 |-----------|------------|---------|
 | Desktop Framework | Tauri | Native desktop wrapper |
 | Frontend UI | SolidJS + Vite | Reactive UI and dev tooling |
-| 2D Rendering | PixiJS | Hardware-accelerated graphics |
-| Physics Engine | Rust + WebAssembly | High-performance computations |
+| 2D Rendering | PixiJS v8 | Hardware-accelerated graphics |
+| Canvas Object Management | Rust + WebAssembly | High-performance object creation, selection, and transformation |
 | Build Tools | wasm-pack, Cargo | WASM compilation |
+| Package Management | Bun | Fast package management |
 
 ## 📁 Project Structure
 
 ```txt
 tauri-rust-solidjs-wasm_spike/
-├── src-tauri/                 # Tauri backend
+├── src-tauri/                    # Tauri backend
 │   ├── Cargo.toml
 │   ├── src/main.rs
-│   └── particle_sim/          # WASM physics module
+│   ├── particle_sim/             # Legacy WASM physics module
+│   │   ├── Cargo.toml
+│   │   └── src/lib.rs
+│   └── canvas_sim/               # New WASM canvas object module
 │       ├── Cargo.toml
 │       └── src/lib.rs
-├── src/                       # SolidJS frontend (TypeScript)
-│   ├── App.tsx
-│   └── main.ts
-├── public/                    # Static assets + WASM output
-│   └── (WASM files)
-├── Cargo.toml                 # Workspace configuration
-├── package.json               # Frontend dependencies
-├── PROJECT_PLAN.md            # Detailed implementation plan
-├── README.md                  # This file
-└── LICENSE                    # MIT License
+├── src/                          # SolidJS frontend (TypeScript)
+│   ├── app.tsx                   # Main application
+│   ├── main.ts                   # Entry point
+│   ├── components/               # UI Components
+│   │   ├── CanvasPerformanceTest.tsx  # Performance test component
+│   │   └── canvas-test/          # Canvas harness implementation
+│   │       └── CanvasTestHarness.ts
+│   └── types/                    # TypeScript type definitions
+│       └── tauri.d.ts            # Tauri API type declarations
+├── public/                       # Static assets
+├── Cargo.toml                    # Workspace configuration
+├── package.json                  # Frontend dependencies
+├── PROJECT_PLAN.md               # Detailed implementation plan
+├── WASM-INTEGRATION.md           # WASM integration details
+├── README.md                     # This file
+└── LICENSE                       # MIT License
 ```
 
 ## 🚀 Getting Started
@@ -90,9 +102,9 @@ cd tauri-rust-solidjs-wasm_spike
 # Install frontend dependencies
 npm install
 
-# Build WASM module
-cd src-tauri/particle_sim
-wasm-pack build --target web --out-dir ../../public/wasm
+# Build WASM modules
+cd src-tauri/canvas_sim
+wasm-pack build --target web
 cd ../..
 
 # Start development server

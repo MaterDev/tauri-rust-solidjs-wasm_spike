@@ -17,6 +17,7 @@
   "devDependencies": {
     "@solidjs/testing-library": "^0.8.10",
     "@testing-library/jest-dom": "^6.6.3",
+    "@types/node": "^24.1.0",
     "@types/pixi.js": "^5.0.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.7.2",
@@ -29,6 +30,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2.7.0",
     "@tauri-apps/plugin-log": "^2.6.0",
+    "chart.js": "^4.5.0",
     "pixi.js": "^8.11.0",
     "solid-js": "^1.9.5"
   }
