@@ -1,7 +1,8 @@
 import { Component, onCleanup, onMount, createSignal } from 'solid-js';
 import { info, error } from '@tauri-apps/plugin-log';
 import { invoke } from '@tauri-apps/api/core';
-import { CanvasTestHarness } from './canvas-test/CanvasTestHarness';
+import { CanvasTestHarness_v2 } from './canvas-test/CanvasTestHarness_v2';
+import { TestMode } from './canvas-test/types/CanvasTypes';
 import PerformanceCharts from './canvas-test/PerformanceCharts';
 import { SystemMetrics } from '../types/systemMetrics';
 
@@ -24,18 +25,18 @@ const CanvasPerformanceTest: Component = () => {
   const METRICS_CHECK_INTERVAL = 1000; // Check system metrics every second
   let metricsUpdateInterval: number | undefined;
 
-  let testHarness: CanvasTestHarness | null = null;
+  let testHarness: CanvasTestHarness_v2 | null = null;
   let performanceMonitor: number | null = null;
 
   const initializeTest = async (containerElement: HTMLDivElement) => {
     try {
       info('Initializing Canvas Performance Test...');
       
-      testHarness = new CanvasTestHarness(containerElement);
+      testHarness = new CanvasTestHarness_v2(containerElement);
       await testHarness.initialize();
       
-      // Start with initial object count
-      await testHarness.setObjectCount(objectCount());
+      // Create initial objects
+      await testHarness.createObjects(objectCount());
       
       // Start performance monitoring
       startPerformanceMonitoring();
@@ -138,7 +139,7 @@ const CanvasPerformanceTest: Component = () => {
     setObjectCount(newCount);
     
     if (testHarness) {
-      await testHarness.setObjectCount(newCount);
+      await testHarness.createObjects(newCount);
     }
   };
 
@@ -146,7 +147,23 @@ const CanvasPerformanceTest: Component = () => {
     setTestMode(mode);
     
     if (testHarness) {
-      await testHarness.setTestMode(mode);
+      // Convert string to TestMode enum
+      const testMode = getTestModeFromString(mode);
+      testHarness.setTestMode(testMode);
+    }
+  };
+  
+  /**
+   * Convert test mode string to TestMode enum
+   */
+  const getTestModeFromString = (mode: string): TestMode => {
+    switch (mode.toLowerCase()) {
+      case 'static': return TestMode.Static;
+      case 'interactive': return TestMode.Interactive;
+      case 'rotating': return TestMode.Rotating;
+      case 'scaling': return TestMode.Scaling;
+      case 'stress': return TestMode.Stress;
+      default: return TestMode.Static;
     }
   };
 
@@ -160,7 +177,7 @@ const CanvasPerformanceTest: Component = () => {
     }
     
     if (testHarness) {
-      testHarness.cleanup();
+      testHarness.destroy();
     }
     
     info('Canvas performance test cleanup complete');

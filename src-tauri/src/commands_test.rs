@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::commands::{get_system_metrics, SystemMetrics};
+    use crate::commands::{get_system_metrics};
 
     #[test]
     fn test_get_system_metrics_returns_valid_data() {
