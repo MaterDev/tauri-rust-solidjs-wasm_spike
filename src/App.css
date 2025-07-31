@@ -4,34 +4,25 @@
   text-align: center;
   color: #e0e0e0;
   background-color: #121212;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.App-header {
-  margin-bottom: 20px;
-}
-
-.App-header h1 {
+  width: 100vw;
+  height: 100vh;
   margin: 0;
-  padding: 10px 0;
-  font-size: 2rem;
-}
-
-.App-header p {
-  margin: 0;
-  padding-bottom: 20px;
-  opacity: 0.8;
-}
-
-.particle-simulation {
-  position: relative;
-  width: 800px;
-  height: 600px;
-  margin: 0 auto;
-  border-radius: 8px;
+  padding: 0;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Remove App-header styles since we want full-screen canvas */
+
+/* Full-screen canvas container */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .fps-counter {
