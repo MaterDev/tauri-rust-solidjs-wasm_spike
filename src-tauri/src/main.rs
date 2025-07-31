@@ -3,6 +3,9 @@
 
 mod commands;
 
+#[cfg(test)]
+mod commands_test;
+
 extern crate lazy_static;
 
 use commands::get_system_metrics;

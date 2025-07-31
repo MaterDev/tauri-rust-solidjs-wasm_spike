@@ -63,13 +63,24 @@ const CanvasPerformanceTest: Component = () => {
     // Update system metrics using the Tauri backend command
     const updateSystemMetrics = async () => {
       try {
+        info('Calling get_system_metrics invoke...');
         const metrics: SystemMetrics = await invoke('get_system_metrics');
+        info(`Raw metrics received: ${JSON.stringify(metrics)}`);
+        
+        // Log previous values before setting new ones
+        info(`Previous metrics - CPU: ${cpuUsage().toFixed(1)}%, Memory: ${memoryUsage().toFixed(1)}%, Process: ${processMemory().toFixed(1)}MB`);
+        
+        // Set new values
         setCpuUsage(metrics.cpu_usage);
         setMemoryUsage(metrics.memory_usage_percent);
         setProcessMemory(metrics.process_memory_mb);
+        
+        // Log confirmation of updates
         info(`System metrics updated - CPU: ${metrics.cpu_usage.toFixed(1)}%, Memory: ${metrics.memory_usage_percent.toFixed(1)}%, Process: ${metrics.process_memory_mb.toFixed(1)}MB`);
+        info(`Current state after update - CPU: ${cpuUsage().toFixed(1)}%, Memory: ${memoryUsage().toFixed(1)}%, Process: ${processMemory().toFixed(1)}MB`);
       } catch (err) {
         error(`Error getting system metrics: ${err}`);
+        console.error('Detailed error:', err);
       }
     };
     
@@ -233,7 +244,9 @@ const CanvasPerformanceTest: Component = () => {
           <PerformanceCharts 
             fps={fps()} 
             renderTime={renderTime()} 
+            cpuUsage={cpuUsage()} 
             memoryUsage={memoryUsage()} 
+            processMemory={processMemory()} 
             objectCount={objectCount()} 
           />
         </div>

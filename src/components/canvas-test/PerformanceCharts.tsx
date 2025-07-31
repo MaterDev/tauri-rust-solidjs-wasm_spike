@@ -11,7 +11,9 @@ const MAX_DATA_POINTS = 100;
 interface PerformanceChartsProps {
   fps: number;
   renderTime: number;
+  cpuUsage: number;
   memoryUsage: number;
+  processMemory: number;
   objectCount: number;
 }
 
@@ -34,7 +36,9 @@ const PerformanceCharts: Component<PerformanceChartsProps> = (props) => {
   // Datasets
   const fpsData: number[] = [];
   const renderTimeData: number[] = [];
+  const cpuData: number[] = [];
   const memoryData: number[] = [];
+  const processMemoryData: number[] = [];
   const objectCountData: number[] = [];
   
   // Initialize timestamp for x-axis
@@ -45,7 +49,9 @@ const PerformanceCharts: Component<PerformanceChartsProps> = (props) => {
     timeLabels.push(label);
     fpsData.push(props.fps);
     renderTimeData.push(props.renderTime);
+    cpuData.push(props.cpuUsage);
     memoryData.push(props.memoryUsage);
+    processMemoryData.push(props.processMemory);
     objectCountData.push(props.objectCount);
     
     // Limit data points
@@ -53,7 +59,9 @@ const PerformanceCharts: Component<PerformanceChartsProps> = (props) => {
       timeLabels.shift();
       fpsData.shift();
       renderTimeData.shift();
+      cpuData.shift();
       memoryData.shift();
+      processMemoryData.shift();
       objectCountData.shift();
     }
     
@@ -116,8 +124,15 @@ const PerformanceCharts: Component<PerformanceChartsProps> = (props) => {
           suggestedMax,
           ticks: {
             callback: (value: number) => {
-              if (yAxisLabel === 'Memory (MB)') {
-                return `${value.toFixed(1)}`;
+              if (yAxisLabel === 'Usage') {
+                // Format based on dataset label (CPU %, Memory %, or Process Memory MB)
+                if (value > 0 && value < 100) {
+                  // Likely a percentage value
+                  return `${value.toFixed(1)}%`;
+                } else {
+                  // Likely MB value
+                  return `${value.toFixed(1)} MB`;
+                }
               } else if (yAxisLabel === 'Render Time (ms)') {
                 return `${value.toFixed(1)}`;
               }
@@ -207,10 +222,26 @@ const PerformanceCharts: Component<PerformanceChartsProps> = (props) => {
           labels: timeLabels,
           datasets: [
             {
-              label: 'Memory Usage',
+              label: 'System Memory Usage (%)',
               data: memoryData,
               borderColor: 'rgb(255, 159, 64)',
               backgroundColor: 'rgba(255, 159, 64, 0.2)',
+              tension: 0.2,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Process Memory (MB)',
+              data: processMemoryData,
+              borderColor: 'rgb(75, 75, 192)',
+              backgroundColor: 'rgba(75, 75, 192, 0.2)',
+              tension: 0.2,
+              yAxisID: 'y'
+            },
+            {
+              label: 'CPU Usage (%)',
+              data: cpuData,
+              borderColor: 'rgb(192, 75, 75)',
+              backgroundColor: 'rgba(192, 75, 75, 0.2)',
               tension: 0.2,
               yAxisID: 'y'
             },
@@ -225,7 +256,7 @@ const PerformanceCharts: Component<PerformanceChartsProps> = (props) => {
             }
           ]
         },
-        options: getChartOptions('Memory Usage', 'Memory (MB)')
+        options: getChartOptions('System Resources', 'Usage')
       });
     }
   };

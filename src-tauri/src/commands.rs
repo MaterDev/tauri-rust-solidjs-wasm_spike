@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::sync::Mutex;
 use std::time::Duration;
-use sysinfo::{System, SystemExt, CpuExt, ProcessExt, PidExt, RefreshKind};
+use sysinfo::{System, SystemExt, CpuExt, ProcessExt};
 use tauri::command;
 
 // Global System instance to prevent frequent reinitializations
@@ -25,13 +25,12 @@ pub struct SystemMetrics {
 pub fn get_system_metrics() -> SystemMetrics {
     let mut system = SYSTEM.lock().unwrap();
     
-    // Refresh system info with correct traits
-    // Using SystemExt trait methods
-    system.refresh_system();
-    system.refresh_processes();
+    // Full refresh of everything to ensure we get fresh data
+    // The Refresh kind is all-inclusive to get everything
+    system.refresh_all();
     
-    // Short sleep to collect CPU usage
-    std::thread::sleep(Duration::from_millis(100));
+    // Short sleep to ensure CPU usage measurement is accurate
+    std::thread::sleep(Duration::from_millis(250));
     system.refresh_cpu();
     
     // Calculate overall CPU usage - average across all cores
@@ -45,6 +44,9 @@ pub fn get_system_metrics() -> SystemMetrics {
         cpu_usage /= cpu_count as f32;
     }
     
+    // Log CPU usage for debugging
+    println!("CPU Usage: {}%", cpu_usage);
+    
     // Get memory info using SystemExt trait methods
     let memory_used = system.used_memory();
     let memory_total = system.total_memory();
@@ -52,15 +54,28 @@ pub fn get_system_metrics() -> SystemMetrics {
     let memory_total_mb = memory_total as f64 / 1024.0 / 1024.0;
     let memory_usage_percent = (memory_used as f32 / memory_total as f32) * 100.0;
     
+    // Log memory info for debugging
+    println!("Memory: {:.1}MB / {:.1}MB ({:.1}%)", memory_used_mb, memory_total_mb, memory_usage_percent);
+    
     // Get memory used by this process using current PID
     let process_memory_mb = match sysinfo::get_current_pid() {
         Ok(pid) => {
             match system.process(pid) {
-                Some(process) => process.memory() as f64 / 1024.0 / 1024.0,
-                None => 0.0,
+                Some(process) => {
+                    let mem = process.memory() as f64 / 1024.0 / 1024.0;
+                    println!("Process Memory: {:.1}MB for PID {:?}", mem, pid);
+                    mem
+                },
+                None => {
+                    println!("Process not found for PID {:?}", pid);
+                    0.0
+                },
             }
         },
-        Err(_) => 0.0,
+        Err(e) => {
+            println!("Failed to get current PID: {:?}", e);
+            0.0
+        },
     };
 
     SystemMetrics {
