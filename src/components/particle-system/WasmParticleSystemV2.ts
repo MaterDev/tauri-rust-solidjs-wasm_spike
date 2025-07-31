@@ -73,8 +73,8 @@ export class WasmParticleSystemV2 {
       
       // Create PixiJS particles to match WASM particle count
       for (let i = 0; i < particleCount; i++) {
-        // Use PixiJS v8 Particle constructor with smoother, smaller particles
-        const baseSize = 0.3 + Math.random() * 0.4; // Much smaller particles (0.3-0.7)
+        // Use PixiJS v8 Particle constructor with varied particle sizes
+        const baseSize = 0.4 + Math.random() * 1.2; // Varied sizes (0.4-1.6)
         const particle = new Particle({
           texture: this.particleTexture,
           x: this.centerX,
@@ -82,9 +82,12 @@ export class WasmParticleSystemV2 {
           scaleX: baseSize,
           scaleY: baseSize,
           tint: this.emitterConfig.colors[Math.floor(Math.random() * this.emitterConfig.colors.length)],
-          alpha: 0.8, // Slightly transparent for better blending
+          alpha: 0.9, // Slightly more opaque for solid circles
           rotation: Math.random() * Math.PI * 2 // Random initial rotation
         });
+        
+        // Store the initial size for dynamic scaling later
+        (particle as any).initialSize = baseSize;
         
         this.particleList.push(particle);
         // PixiJS v8 ParticleContainer uses addParticle method
@@ -142,12 +145,12 @@ export class WasmParticleSystemV2 {
           // Dynamic alpha based on distance and emitter config
           particle.alpha = Math.max(0.1, 1.0 - normalizedDistance * 0.8);
           
-          // Dynamic scale based on distance (smoother scaling for less chunkiness)
-          const minScale = 0.2;
-          const maxScale = 0.6;
-          const baseScale = minScale + (maxScale - minScale) * (1.0 - normalizedDistance);
-          particle.scaleX = baseScale;
-          particle.scaleY = baseScale;
+          // Dynamic scale based on distance while preserving initial size variation
+          const initialSize = (particle as any).initialSize || 0.8; // Fallback if not stored
+          const sizeMultiplier = 0.3 + (1.0 - normalizedDistance) * 0.7; // Scale from 30% to 100%
+          const finalSize = initialSize * sizeMultiplier;
+          particle.scaleX = finalSize;
+          particle.scaleY = finalSize;
           
           // Smooth rotation based on position for visual interest
           particle.rotation += 0.005 * (1.0 - normalizedDistance);

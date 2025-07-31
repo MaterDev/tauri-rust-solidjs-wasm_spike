@@ -27,15 +27,20 @@ impl Simulation {
          // Create vector with the specified number of particles
          let particles = (0..count)
              .map(|_| {
-                 // Generate random initial upward velocity
-                 let vx = rng.gen_range(-0.3..0.3);
-                 let vy = rng.gen_range(0.5..1.5);
-                 let vz = rng.gen_range(-0.3..0.3);
+                 // Generate explosive supernova radial velocity
+                 let angle = rng.gen_range(0.0..std::f32::consts::PI * 2.0); // Full circle
+                 let speed = rng.gen_range(2.5..4.5); // High-speed explosion
+                 let vx = angle.cos() * speed;
+                 let vy = angle.sin() * speed;
+                 let vz = rng.gen_range(-0.5..0.5); // More Z variation for 3D effect
+                 
+                 // Stagger initial ages for continuous emission
+                 let initial_age = rng.gen_range(0.0..3.0);
                  
                  Particle {
                      position: [0.0, 0.0, 0.0], // Start at origin
                      velocity: [vx, vy, vz],
-                     age: 0.0,
+                     age: initial_age, // Staggered ages prevent batch respawning
                  }
              })
              .collect();
@@ -48,13 +53,29 @@ impl Simulation {
 
      // Update the simulation by one time step
     pub fn tick(&mut self) -> Vec<f32> {
-        // Gravity constant
-        const GRAVITY: f32 = -0.8;
+        // Supernova explosion constants
+        const RADIAL_ACCELERATION: f32 = 1.2; // Continuous outward acceleration
+        const EXPLOSION_FORCE: f32 = 0.8; // Additional explosive force
         
         // Update each particle
         for particle in &mut self.particles {
-            // Apply gravity to y-component of velocity
-            particle.velocity[1] += GRAVITY * self.time_step;
+            // Calculate distance and direction from center
+            let distance_from_center = (particle.position[0].powi(2) + particle.position[1].powi(2)).sqrt();
+            
+            // Apply continuous radial acceleration (supernova expansion)
+            if distance_from_center > 0.01 { // Avoid division by zero
+                let normalized_x = particle.position[0] / distance_from_center;
+                let normalized_y = particle.position[1] / distance_from_center;
+                
+                // Continuous outward acceleration (like expanding shockwave)
+                particle.velocity[0] += normalized_x * RADIAL_ACCELERATION * self.time_step;
+                particle.velocity[1] += normalized_y * RADIAL_ACCELERATION * self.time_step;
+                
+                // Additional explosive force that diminishes with distance
+                let explosion_multiplier = (3.0 - distance_from_center).max(0.0) / 3.0;
+                particle.velocity[0] += normalized_x * EXPLOSION_FORCE * explosion_multiplier * self.time_step;
+                particle.velocity[1] += normalized_y * EXPLOSION_FORCE * explosion_multiplier * self.time_step;
+            }
             
             // Update position based on velocity
             particle.position[0] += particle.velocity[0] * self.time_step;
@@ -64,19 +85,22 @@ impl Simulation {
             // Increment age
             particle.age += self.time_step;
             
-            // Respawn logic: if particle is too old or falls below threshold
-            if particle.age > 3.0 || particle.position[1] < -1.0 {
-                // Reset position to origin
+            // Respawn logic: if particle is too old or moves too far from center
+            let distance_from_center = (particle.position[0].powi(2) + particle.position[1].powi(2)).sqrt();
+            if particle.age > 4.0 || distance_from_center > 12.0 {
+                // Reset position to origin (supernova core)
                 particle.position = [0.0, 0.0, 0.0];
                 
                 // Reset age
                 particle.age = 0.0;
                 
-                // Assign new random upward velocity
+                // Assign new explosive supernova velocity
                 let mut rng = rand::thread_rng();
-                particle.velocity[0] = rng.gen_range(-0.3..0.3);
-                particle.velocity[1] = rng.gen_range(0.5..1.5);
-                particle.velocity[2] = rng.gen_range(-0.3..0.3);
+                let angle = rng.gen_range(0.0..std::f32::consts::PI * 2.0); // Full circle explosion
+                let speed = rng.gen_range(2.5..4.5); // High-speed explosion
+                particle.velocity[0] = angle.cos() * speed;
+                particle.velocity[1] = angle.sin() * speed;
+                particle.velocity[2] = rng.gen_range(-0.5..0.5); // 3D explosion effect
             }
         }
         
